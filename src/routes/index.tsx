@@ -1,5 +1,8 @@
 import { useState } from "react";
-import { createFileRoute } from "@tanstack/react-router";
+import { createFileRoute, Link } from "@tanstack/react-router";
+import { z } from "zod";
+import { RealJobs, RealWorkers } from "@/components/RealListings";
+import { useSession } from "@/lib/zamwork";
 import {
   Search,
   MapPin,
@@ -70,6 +73,7 @@ const categories = [
 ];
 
 export const Route = createFileRoute("/")({
+  validateSearch: z.object({ view: z.enum(["home", "jobs", "workers"]).optional() }),
   head: () => ({
     meta: [
       { title: "Zamwork — Find Work. Find Talent. Connect." },
@@ -106,7 +110,9 @@ function Modal({ onClose, children }: { onClose: () => void; children: React.Rea
 }
 
 function Index() {
-  const [currentView, setCurrentView] = useState("home");
+  const initialView = Route.useSearch().view ?? "home";
+  const [currentView, setCurrentView] = useState<string>(initialView);
+  const { user } = useSession();
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedLocation, setSelectedLocation] = useState("All Locations");
   const [selectedCategory, setSelectedCategory] = useState("All Categories");
@@ -114,8 +120,7 @@ function Index() {
   const [savedJobs, setSavedJobs] = useState<number[]>([]);
   const [openJob, setOpenJob] = useState<Job | null>(null);
   const [openWorker, setOpenWorker] = useState<Worker | null>(null);
-  const [signupOpen, setSignupOpen] = useState(false);
-
+  
   const go = (view: string) => { setCurrentView(view); setMobileMenuOpen(false); window.scrollTo({ top: 0 }); };
 
   const filteredJobs = jobs.filter((job) => {
@@ -179,7 +184,7 @@ function Index() {
             </button>
             <nav className="hidden md:flex gap-8">{navBtn("home", "Home")}{navBtn("jobs", "Find Jobs")}{navBtn("workers", "Find Workers")}</nav>
             <div className="flex items-center gap-3">
-              <button onClick={() => setSignupOpen(true)} className="hidden sm:flex items-center gap-2 px-4 py-2 rounded-lg bg-primary text-primary-foreground hover:bg-primary/90 transition font-medium text-sm"><User className="w-4 h-4" />Sign In</button>
+              <Link to={user ? "/dashboard" : "/auth"} className="hidden sm:flex items-center gap-2 px-4 py-2 rounded-lg bg-primary text-primary-foreground hover:bg-primary/90 transition font-medium text-sm"><User className="w-4 h-4" />{user ? "My Account" : "Sign In"}</Link>
               <button onClick={() => setMobileMenuOpen(!mobileMenuOpen)} aria-label="Menu" className="md:hidden p-2">{mobileMenuOpen ? <X className="w-6 h-6" /> : <Menu className="w-6 h-6" />}</button>
             </div>
           </div>
@@ -188,7 +193,7 @@ function Index() {
               <button onClick={() => go("home")} className="block w-full text-left px-4 py-3 hover:bg-muted rounded">Home</button>
               <button onClick={() => go("jobs")} className="block w-full text-left px-4 py-3 hover:bg-muted rounded">Find Jobs</button>
               <button onClick={() => go("workers")} className="block w-full text-left px-4 py-3 hover:bg-muted rounded">Find Workers</button>
-              <button onClick={() => { setSignupOpen(true); setMobileMenuOpen(false); }} className="block w-full text-left px-4 py-3 hover:bg-muted rounded font-medium text-primary">Sign In / Sign Up</button>
+              <Link to={user ? "/dashboard" : "/auth"} className="block w-full text-left px-4 py-3 hover:bg-muted rounded font-medium text-primary">{user ? "My Account" : "Sign In / Sign Up"}</Link>
             </div>
           )}
         </div>
@@ -237,14 +242,14 @@ function Index() {
               <div className="grid md:grid-cols-3 gap-6">
                 {[
                   { icon: UserPlus, title: "For Job Seekers", text: "Create your profile and discover job opportunities.", action: () => go("jobs"), cta: "Browse jobs" },
-                  { icon: Hammer, title: "For Skilled Workers", text: "Showcase your skills and make it easier for people to find you.", action: () => setSignupOpen(true), cta: "Create a profile" },
+                  { icon: Hammer, title: "For Skilled Workers", text: "Showcase your skills and make it easier for people to find you.", action: () => {}, to: "worker", cta: "Create a profile" },
                   { icon: Building2, title: "For Employers & Clients", text: "Find skilled people for jobs and services you need.", action: () => go("workers"), cta: "Find workers" },
                 ].map((c) => (
                   <div key={c.title} className="bg-card border border-border rounded-lg p-6 flex flex-col">
                     <c.icon className="w-8 h-8 text-primary mb-3" />
                     <h3 className="font-bold text-lg mb-2">{c.title}</h3>
                     <p className="text-muted-foreground mb-4 flex-1">{c.text}</p>
-                    <button onClick={c.action} className="text-primary font-medium flex items-center gap-2 py-2">{c.cta} <ArrowRight className="w-4 h-4" /></button>
+                    {c.to ? <Link to="/auth" search={{ role: "worker" }} className="text-primary font-medium flex items-center gap-2 py-2">{c.cta} <ArrowRight className="w-4 h-4" /></Link> : <button onClick={c.action} className="text-primary font-medium flex items-center gap-2 py-2">{c.cta} <ArrowRight className="w-4 h-4" /></button>}
                   </div>
                 ))}
               </div>
@@ -309,8 +314,8 @@ function Index() {
               <h2 className="text-3xl sm:text-4xl font-bold text-primary-foreground mb-4">Ready to Get Started?</h2>
               <p className="text-lg text-primary-foreground/90 mb-8">Be one of the first to join Zamwork — find work, find talent and connect. Free during our launch.</p>
               <div className="flex flex-col sm:flex-row gap-4 justify-center">
-                <button onClick={() => setSignupOpen(true)} className="px-8 py-3 bg-accent text-accent-foreground rounded-lg font-semibold hover:bg-accent/90 transition">Sign Up as Worker</button>
-                <button onClick={() => setSignupOpen(true)} className="px-8 py-3 bg-primary-foreground text-primary rounded-lg font-semibold hover:bg-primary-foreground/90 transition">Sign Up as Employer</button>
+                <Link to="/auth" search={{ role: "worker" }} className="px-8 py-3 bg-accent text-accent-foreground rounded-lg font-semibold hover:bg-accent/90 transition">Sign Up as Worker</Link>
+                <Link to="/auth" search={{ role: "employer" }} className="px-8 py-3 bg-primary-foreground text-primary rounded-lg font-semibold hover:bg-primary-foreground/90 transition">Sign Up as Employer</Link>
               </div>
             </div>
           </section>
@@ -328,6 +333,8 @@ function Index() {
               <div><label className="block text-sm font-medium mb-2">Category</label><select value={selectedCategory} onChange={(e) => setSelectedCategory(e.target.value)} className="w-full px-4 py-3 rounded-lg border border-border bg-card text-base focus:outline-none focus:ring-2 focus:ring-primary cursor-pointer">{categoryNames.map((cat) => <option key={cat} value={cat}>{cat}</option>)}</select></div>
             </div>
             <div className="mb-6"><SafetyNotice /></div>
+            <RealJobs filters={{ search: searchQuery, location: selectedLocation, category: selectedCategory }} />
+            <h2 className="text-xl font-bold mb-2">Example listings</h2>
             <div className="mb-4 text-sm text-muted-foreground">Found {filteredJobs.length} {filteredJobs.length === 1 ? "job" : "jobs"}</div>
             {filteredJobs.length === 0 ? (
               <div className="text-center py-12"><Briefcase className="w-16 h-16 text-muted-foreground mx-auto mb-4 opacity-50" /><p className="text-lg text-muted-foreground">No jobs found matching your criteria.</p><button onClick={() => { setSearchQuery(""); setSelectedLocation("All Locations"); setSelectedCategory("All Categories"); }} className="mt-3 text-primary font-medium">Clear filters</button></div>
@@ -344,6 +351,8 @@ function Index() {
             <h1 className="text-3xl font-bold mb-2">Find Workers</h1>
             <p className="text-sm text-muted-foreground mb-6">Profiles marked "Example" are samples to show how worker profiles appear on Zamwork.</p>
             <div className="mb-6"><SafetyNotice /></div>
+            <RealWorkers />
+            <h2 className="text-xl font-bold mb-4">Example profiles</h2>
             <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-6">{workers.map((w) => <WorkerCard key={w.id} worker={w} />)}</div>
           </div>
         </section>
@@ -374,7 +383,7 @@ function Index() {
           <p className="text-sm text-muted-foreground mb-4">{openJob.apply}</p>
           <div className="mb-4"><SafetyNotice /></div>
           <p className="text-xs text-muted-foreground mb-3">This is an example listing and is not an active job.</p>
-          <button onClick={() => { setOpenJob(null); setSignupOpen(true); }} className="w-full py-3 bg-primary text-primary-foreground rounded font-medium">Apply (free)</button>
+          <button onClick={() => { setOpenJob(null); go("jobs"); }} className="w-full py-3 bg-primary text-primary-foreground rounded font-medium">See real jobs you can apply for</button>
         </Modal>
       )}
 
@@ -402,13 +411,6 @@ function Index() {
         </Modal>
       )}
 
-      {signupOpen && (
-        <Modal onClose={() => setSignupOpen(false)}>
-          <h2 className="text-xl font-bold mb-2 pr-8">Accounts are opening soon</h2>
-          <p className="text-muted-foreground mb-4">Zamwork is newly launched. Sign-up, profiles, applying and contacting will be available shortly — and all free during our launch.</p>
-          <button onClick={() => setSignupOpen(false)} className="w-full py-3 bg-primary text-primary-foreground rounded font-medium">OK</button>
-        </Modal>
-      )}
     </div>
   );
 }
