@@ -66,7 +66,7 @@ function AuthPage() {
         if (error) setError(error.message === "Invalid login credentials" ? "Wrong email or password." : error.message);
       } else {
         const parsed = signupSchema.safeParse(form);
-        if (!parsed.success) { setError(parsed.error.issues[0].message); return; }
+        if (!parsed.success) { setError((parsed.error.issues[0]?.message ?? "Please check your details")); return; }
         const { full_name, phone, location, email, password } = parsed.data;
         const { data, error } = await supabase.auth.signUp({
           email, password,
