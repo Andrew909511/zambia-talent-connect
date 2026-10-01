@@ -75,12 +75,12 @@ type Profile = { full_name: string; phone: string; location: string };
 function Onboarding({ userId, meta, existingRole, existingProfile }: { userId: string; meta: Record<string, unknown>; existingRole: Role | null; existingProfile: Profile | null }) {
   const qc = useQueryClient();
   const pending = typeof window !== "undefined" ? localStorage.getItem("zamwork_pending_role") : null;
-  const metaRole = (meta.role === "worker" || meta.role === "employer" ? meta.role : pending === "worker" || pending === "employer" ? pending : null) as Role | null;
+  const metaRole = (meta["role"] === "worker" || meta["role"] === "employer" ? meta["role"] : pending === "worker" || pending === "employer" ? pending : null) as Role | null;
   const [role, setRole] = useState<Role>(existingRole ?? metaRole ?? "worker");
   const [form, setForm] = useState<Profile>({
-    full_name: existingProfile?.full_name ?? String(meta.full_name ?? meta.name ?? ""),
-    phone: existingProfile?.phone ?? String(meta.phone ?? ""),
-    location: existingProfile?.location ?? String(meta.location ?? "Lusaka"),
+    full_name: existingProfile?.full_name ?? String(meta["full_name"] ?? meta["name"] ?? ""),
+    phone: existingProfile?.phone ?? String(meta["phone"] ?? ""),
+    location: existingProfile?.location ?? String(meta["location"] ?? "Lusaka"),
   });
   const [error, setError] = useState("");
   const [busy, setBusy] = useState(false);
@@ -88,7 +88,7 @@ function Onboarding({ userId, meta, existingRole, existingProfile }: { userId: s
   async function save() {
     setError("");
     const parsed = profileSchema.safeParse(form);
-    if (!parsed.success) { setError(parsed.error.issues[0].message); return; }
+    if (!parsed.success) { setError((parsed.error.issues[0]?.message ?? "Please check your details")); return; }
     setBusy(true);
     const { error: pErr } = await supabase.from("profiles").upsert({ id: userId, ...parsed.data, updated_at: new Date().toISOString() });
     const { error: rErr } = existingRole ? { error: null } : await supabase.rpc("set_my_role", { _role: role });
@@ -132,7 +132,7 @@ function ProfileEditor({ userId, profile }: { userId: string; profile: Profile }
   const [msg, setMsg] = useState("");
   async function save() {
     const parsed = profileSchema.safeParse(form);
-    if (!parsed.success) { setMsg(parsed.error.issues[0].message); return; }
+    if (!parsed.success) { setMsg((parsed.error.issues[0]?.message ?? "Please check your details")); return; }
     const { error } = await supabase.from("profiles").update({ ...parsed.data, updated_at: new Date().toISOString() }).eq("id", userId);
     setMsg(error ? "Couldn't save. Try again." : "Saved.");
     qc.invalidateQueries({ queryKey: ["account", userId] });
@@ -230,7 +230,7 @@ function EmployerView({ userId, name }: { userId: string; name: string }) {
     e.preventDefault();
     setError("");
     const parsed = jobSchema.safeParse(form);
-    if (!parsed.success) { setError(parsed.error.issues[0].message); return; }
+    if (!parsed.success) { setError((parsed.error.issues[0]?.message ?? "Please check your details")); return; }
     const { error } = await supabase.from("jobs").insert({ ...parsed.data, employer_id: userId, employer_name: name });
     if (error) { setError("Couldn't post the job. Please try again."); return; }
     setForm(empty); setShowForm(false);
