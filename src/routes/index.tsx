@@ -407,7 +407,7 @@ function Index() {
           ) : <p className="text-sm text-muted-foreground mb-4">No work samples added yet.</p>}
           <div className="mb-4"><SafetyNotice /></div>
           <p className="text-xs text-muted-foreground mb-3">This is an example profile, not a real person.</p>
-          <button onClick={() => { setOpenWorker(null); setSignupOpen(true); }} className="w-full py-3 bg-primary text-primary-foreground rounded font-medium flex items-center justify-center gap-2"><Mail className="w-4 h-4" />Contact (free)</button>
+          <Link to="/auth" search={{ role: "employer" }} onClick={() => setOpenWorker(null)} className="w-full py-3 bg-primary text-primary-foreground rounded font-medium flex items-center justify-center gap-2"><Mail className="w-4 h-4" />Contact (free)</Link>
         </Modal>
       )}
 
