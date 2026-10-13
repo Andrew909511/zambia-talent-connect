@@ -54,66 +54,87 @@ export type Database = {
           category: string
           created_at: string
           description: string
+          district: string
           employer_id: string
           employer_name: string
           id: string
           job_type: string
           location: string
+          province: string
           requirements: string
           salary: string
           title: string
+          town: string
         }
         Insert: {
           category: string
           created_at?: string
           description: string
+          district?: string
           employer_id?: string
           employer_name: string
           id?: string
           job_type: string
           location: string
+          province?: string
           requirements?: string
           salary?: string
           title: string
+          town?: string
         }
         Update: {
           category?: string
           created_at?: string
           description?: string
+          district?: string
           employer_id?: string
           employer_name?: string
           id?: string
           job_type?: string
           location?: string
+          province?: string
           requirements?: string
           salary?: string
           title?: string
+          town?: string
         }
         Relationships: []
       }
       profiles: {
         Row: {
           created_at: string
+          district: string
           full_name: string
           id: string
           location: string
           phone: string
+          province: string
+          skills: string[]
+          town: string
           updated_at: string
         }
         Insert: {
           created_at?: string
+          district?: string
           full_name: string
           id: string
           location: string
           phone: string
+          province?: string
+          skills?: string[]
+          town?: string
           updated_at?: string
         }
         Update: {
           created_at?: string
+          district?: string
           full_name?: string
           id?: string
           location?: string
           phone?: string
+          province?: string
+          skills?: string[]
+          town?: string
           updated_at?: string
         }
         Relationships: []
@@ -160,9 +181,13 @@ export type Database = {
         Args: never
         Returns: {
           created_at: string
+          district: string
           full_name: string
           id: string
           location: string
+          province: string
+          skills: string[]
+          town: string
         }[]
       }
       set_my_role: {
