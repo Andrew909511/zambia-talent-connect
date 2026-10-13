@@ -4,7 +4,8 @@ import { z } from "zod";
 import { Briefcase, Hammer, Building2 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { lovable } from "@/integrations/lovable/index";
-import { LOCATIONS, inputCls, type Role } from "@/lib/zamwork";
+import { inputCls, type Role } from "@/lib/zamwork";
+import { LocationPicker, SkillsInput } from "@/components/ProfileFields";
 
 const searchSchema = z.object({
   mode: z.enum(["signin", "signup"]).optional(),
@@ -29,7 +30,9 @@ export const Route = createFileRoute("/auth")({
 const signupSchema = z.object({
   full_name: z.string().trim().min(2, "Please enter your name").max(100),
   phone: z.string().trim().min(9, "Please enter a valid phone number").max(30),
-  location: z.string().min(1, "Choose your location"),
+  town: z.string().trim().max(80),
+  province: z.string().max(60),
+  district: z.string().max(80),
   email: z.string().trim().email("Please enter a valid email").max(255),
   password: z.string().min(8, "Password must be at least 8 characters").max(72),
 });
@@ -39,7 +42,8 @@ function AuthPage() {
   const navigate = useNavigate();
   const [mode, setMode] = useState<"signin" | "signup">(search.mode ?? (search.role ? "signup" : "signin"));
   const [role, setRole] = useState<Role>(search.role ?? "worker");
-  const [form, setForm] = useState({ full_name: "", phone: "", location: "Lusaka", email: "", password: "" });
+  const [form, setForm] = useState({ full_name: "", phone: "", province: "", district: "", town: "", email: "", password: "" });
+  const [skills, setSkills] = useState<string[]>([]);
   const [error, setError] = useState("");
   const [info, setInfo] = useState("");
   const [busy, setBusy] = useState(false);
@@ -67,10 +71,11 @@ function AuthPage() {
       } else {
         const parsed = signupSchema.safeParse(form);
         if (!parsed.success) { setError((parsed.error.issues[0]?.message ?? "Please check your details")); return; }
-        const { full_name, phone, location, email, password } = parsed.data;
+        if (!parsed.data.town && !parsed.data.province) { setError("Please choose your province or type your town"); return; }
+        const { full_name, phone, town, province, district, email, password } = parsed.data;
         const { data, error } = await supabase.auth.signUp({
           email, password,
-          options: { emailRedirectTo: `${window.location.origin}/auth`, data: { full_name, phone, location, role } },
+          options: { emailRedirectTo: `${window.location.origin}/auth`, data: { full_name, phone, town, province, district, skills: role === "worker" ? skills : [], role } },
         });
         if (error) setError(error.message);
         else if (!data.session) setInfo(`Almost done! We sent a confirmation link to ${email}. Open it to activate your account.`);
@@ -125,7 +130,8 @@ function AuthPage() {
               <>
                 <input className={inputCls} placeholder={role === "employer" ? "Your name or business name" : "Full name"} value={form.full_name} onChange={set("full_name")} autoComplete="name" />
                 <input className={inputCls} placeholder="Phone number (e.g. 097...)" type="tel" value={form.phone} onChange={set("phone")} autoComplete="tel" />
-                <select className={inputCls} value={form.location} onChange={set("location")}>{LOCATIONS.map((l) => <option key={l}>{l}</option>)}</select>
+                <LocationPicker value={form} onChange={(pl) => setForm({ ...form, ...pl })} />
+                {role === "worker" && <div><p className="text-sm font-medium mb-1">What I do</p><SkillsInput value={skills} onChange={setSkills} /></div>}
               </>
             )}
             <input className={inputCls} placeholder="Email" type="email" value={form.email} onChange={set("email")} autoComplete="email" required />

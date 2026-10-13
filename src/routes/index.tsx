@@ -259,7 +259,7 @@ function Index() {
               <h2 className="text-2xl sm:text-3xl font-bold mb-8">Popular Categories</h2>
               <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-4">
                 {categories.map((cat) => (
-                  <button key={cat.name} onClick={() => { setSelectedCategory(cat.name); go("jobs"); }} className="p-4 rounded-lg border border-border bg-card hover:border-primary hover:bg-primary/5 transition text-center">
+                  <button key={cat.name} onClick={() => { setSearchQuery(cat.name); go("jobs"); }} className="p-4 rounded-lg border border-border bg-card hover:border-primary hover:bg-primary/5 transition text-center">
                     <div className="text-3xl mb-2">{cat.icon}</div>
                     <p className="font-medium text-sm">{cat.name}</p>
                   </button>
