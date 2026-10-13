@@ -49,8 +49,8 @@ export type Place = { town: string; district: string; province: string };
 
 /** Every known place, for autocomplete: districts plus towns (towns mapped to their province). */
 export const ALL_PLACES: Place[] = PROVINCE_NAMES.flatMap((p) => [
-  ...PROVINCES[p].districts.map((d) => ({ town: d, district: d, province: p })),
-  ...PROVINCES[p].towns.map((t) => ({ town: t, district: "", province: p })),
+  ...PROVINCES[p]!.districts.map((d) => ({ town: d, district: d, province: p })),
+  ...PROVINCES[p]!.towns.map((t) => ({ town: t, district: "", province: p })),
 ]);
 
 export function placesIn(province: string): string[] {
