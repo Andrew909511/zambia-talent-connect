@@ -4,7 +4,9 @@ import { useEffect, useState } from "react";
 import { z } from "zod";
 import { Briefcase, LogOut, MapPin, Phone, Trash2 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
-import { CATEGORIES, JOB_TYPES, LOCATIONS, inputCls, useAccount, type Role } from "@/lib/zamwork";
+import { JOB_TYPES, inputCls, useAccount, type Role } from "@/lib/zamwork";
+import { formatLocation, PROFESSIONS, type Place } from "@/lib/zambia";
+import { LocationPicker, SkillsInput } from "@/components/ProfileFields";
 
 export const Route = createFileRoute("/_authenticated/dashboard")({
   head: () => ({
@@ -23,8 +25,15 @@ export const Route = createFileRoute("/_authenticated/dashboard")({
 const profileSchema = z.object({
   full_name: z.string().trim().min(2, "Please enter your name").max(100),
   phone: z.string().trim().min(9, "Please enter a valid phone number").max(30),
-  location: z.string().min(1),
-});
+  province: z.string().max(60),
+  district: z.string().max(80),
+  town: z.string().trim().max(80),
+  skills: z.array(z.string().trim().min(1).max(60)).max(8),
+}).refine((p) => p.town || p.province, { message: "Please choose your province or type your town" });
+
+function toRow(p: Profile) {
+  return { ...p, location: formatLocation(p) };
+}
 
 function Dashboard() {
   const { user } = Route.useRouteContext();
@@ -62,7 +71,7 @@ function Dashboard() {
                 <h1 className="text-2xl sm:text-3xl font-bold">Welcome, {account.data!.profile!.full_name}</h1>
               </div>
               {account.data!.role === "employer" ? <EmployerView userId={user.id} name={account.data!.profile!.full_name} /> : <WorkerView userId={user.id} />}
-              <ProfileEditor userId={user.id} profile={account.data!.profile!} />
+              <ProfileEditor userId={user.id} profile={account.data!.profile!} role={account.data!.role!} />
             </>
           )}
       </main>
@@ -70,18 +79,20 @@ function Dashboard() {
   );
 }
 
-type Profile = { full_name: string; phone: string; location: string };
+type Profile = { full_name: string; phone: string; province: string; district: string; town: string; skills: string[] };
+type ProfileRow = Partial<Profile> & { full_name: string; phone: string; location: string };
 
-function Onboarding({ userId, meta, existingRole, existingProfile }: { userId: string; meta: Record<string, unknown>; existingRole: Role | null; existingProfile: Profile | null }) {
+function fromRow(p: ProfileRow | null, meta: Record<string, unknown> = {}): Profile {
+  const town = p?.town || (p ? "" : String(meta["town"] ?? "")) || (p && !p.province ? p.location : "");
+  return { full_name: p?.full_name ?? String(meta["full_name"] ?? meta["name"] ?? ""), phone: p?.phone ?? String(meta["phone"] ?? ""), province: p?.province ?? String(meta["province"] ?? ""), district: p?.district ?? String(meta["district"] ?? ""), town, skills: p?.skills ?? (Array.isArray(meta["skills"]) ? (meta["skills"] as string[]) : []) };
+}
+
+function Onboarding({ userId, meta, existingRole, existingProfile }: { userId: string; meta: Record<string, unknown>; existingRole: Role | null; existingProfile: ProfileRow | null }) {
   const qc = useQueryClient();
   const pending = typeof window !== "undefined" ? localStorage.getItem("zamwork_pending_role") : null;
   const metaRole = (meta["role"] === "worker" || meta["role"] === "employer" ? meta["role"] : pending === "worker" || pending === "employer" ? pending : null) as Role | null;
   const [role, setRole] = useState<Role>(existingRole ?? metaRole ?? "worker");
-  const [form, setForm] = useState<Profile>({
-    full_name: existingProfile?.full_name ?? String(meta["full_name"] ?? meta["name"] ?? ""),
-    phone: existingProfile?.phone ?? String(meta["phone"] ?? ""),
-    location: existingProfile?.location ?? String(meta["location"] ?? "Lusaka"),
-  });
+  const [form, setForm] = useState<Profile>(fromRow(existingProfile, meta));
   const [error, setError] = useState("");
   const [busy, setBusy] = useState(false);
 
@@ -90,7 +101,7 @@ function Onboarding({ userId, meta, existingRole, existingProfile }: { userId: s
     const parsed = profileSchema.safeParse(form);
     if (!parsed.success) { setError((parsed.error.issues[0]?.message ?? "Please check your details")); return; }
     setBusy(true);
-    const { error: pErr } = await supabase.from("profiles").upsert({ id: userId, ...parsed.data, updated_at: new Date().toISOString() });
+    const { error: pErr } = await supabase.from("profiles").upsert({ id: userId, ...toRow(parsed.data), updated_at: new Date().toISOString() });
     const { error: rErr } = existingRole ? { error: null } : await supabase.rpc("set_my_role", { _role: role });
     setBusy(false);
     if (pErr || rErr) { setError("Couldn't save your details. Please try again."); return; }
@@ -118,7 +129,8 @@ function Onboarding({ userId, meta, existingRole, existingProfile }: { userId: s
       <div className="space-y-3">
         <input className={inputCls} placeholder="Full name or business name" value={form.full_name} onChange={(e) => setForm({ ...form, full_name: e.target.value })} />
         <input className={inputCls} placeholder="Phone number" type="tel" value={form.phone} onChange={(e) => setForm({ ...form, phone: e.target.value })} />
-        <select className={inputCls} value={form.location} onChange={(e) => setForm({ ...form, location: e.target.value })}>{LOCATIONS.map((l) => <option key={l}>{l}</option>)}</select>
+        <LocationPicker value={form} onChange={(pl: Place) => setForm({ ...form, ...pl })} />
+        {role === "worker" && <div><p className="text-sm font-medium mb-1">What I do</p><SkillsInput value={form.skills} onChange={(skills) => setForm({ ...form, skills })} /></div>}
         {error && <p className="text-sm text-destructive">{error}</p>}
         <button onClick={save} disabled={busy} className="w-full py-3 bg-primary text-primary-foreground rounded-lg font-semibold disabled:opacity-60">{busy ? "Saving…" : "Continue"}</button>
       </div>
@@ -126,25 +138,26 @@ function Onboarding({ userId, meta, existingRole, existingProfile }: { userId: s
   );
 }
 
-function ProfileEditor({ userId, profile }: { userId: string; profile: Profile }) {
+function ProfileEditor({ userId, profile, role }: { userId: string; profile: ProfileRow; role: Role }) {
   const qc = useQueryClient();
-  const [form, setForm] = useState<Profile>({ full_name: profile.full_name, phone: profile.phone, location: profile.location });
+  const [form, setForm] = useState<Profile>(fromRow(profile));
   const [msg, setMsg] = useState("");
   async function save() {
     const parsed = profileSchema.safeParse(form);
     if (!parsed.success) { setMsg((parsed.error.issues[0]?.message ?? "Please check your details")); return; }
-    const { error } = await supabase.from("profiles").update({ ...parsed.data, updated_at: new Date().toISOString() }).eq("id", userId);
+    const { error } = await supabase.from("profiles").update({ ...toRow(parsed.data), updated_at: new Date().toISOString() }).eq("id", userId);
     setMsg(error ? "Couldn't save. Try again." : "Saved.");
     qc.invalidateQueries({ queryKey: ["account", userId] });
   }
   return (
     <section className="mt-10 bg-card border border-border rounded-xl p-5">
       <h2 className="text-lg font-bold mb-4">My profile</h2>
-      <div className="grid sm:grid-cols-3 gap-3">
+      <div className="grid sm:grid-cols-2 gap-3">
         <input className={inputCls} value={form.full_name} onChange={(e) => setForm({ ...form, full_name: e.target.value })} aria-label="Name" />
         <input className={inputCls} value={form.phone} type="tel" onChange={(e) => setForm({ ...form, phone: e.target.value })} aria-label="Phone" />
-        <select className={inputCls} value={form.location} onChange={(e) => setForm({ ...form, location: e.target.value })} aria-label="Location">{LOCATIONS.map((l) => <option key={l}>{l}</option>)}</select>
       </div>
+      <div className="mt-3"><LocationPicker value={form} onChange={(pl: Place) => setForm({ ...form, ...pl })} /></div>
+      {role === "worker" && <div className="mt-3"><p className="text-sm font-medium mb-1">What I do (skills, trades, services)</p><SkillsInput value={form.skills} onChange={(skills) => setForm({ ...form, skills })} /></div>}
       <div className="flex items-center gap-3 mt-3">
         <button onClick={save} className="px-5 py-2.5 bg-primary text-primary-foreground rounded-lg font-medium">Save profile</button>
         {msg && <span className="text-sm text-muted-foreground">{msg}</span>}
@@ -200,8 +213,10 @@ function WorkerView({ userId }: { userId: string }) {
 
 const jobSchema = z.object({
   title: z.string().trim().min(2, "Enter a job title").max(120),
-  category: z.string().min(1),
-  location: z.string().min(1),
+  category: z.string().trim().min(2, "Say what kind of work this is (e.g. Plumber)").max(60),
+  province: z.string().max(60),
+  district: z.string().max(80),
+  town: z.string().trim().max(80),
   job_type: z.string().min(1),
   salary: z.string().trim().max(60),
   description: z.string().trim().min(10, "Description must be at least 10 characters").max(3000),
@@ -210,7 +225,7 @@ const jobSchema = z.object({
 
 function EmployerView({ userId, name }: { userId: string; name: string }) {
   const qc = useQueryClient();
-  const empty = { title: "", category: CATEGORIES[0], location: "Lusaka", job_type: JOB_TYPES[0], salary: "", description: "", requirements: "" };
+  const empty = { title: "", category: "", province: "", district: "", town: "", job_type: JOB_TYPES[0], salary: "", description: "", requirements: "" };
   const [form, setForm] = useState(empty);
   const [showForm, setShowForm] = useState(false);
   const [error, setError] = useState("");
@@ -231,7 +246,7 @@ function EmployerView({ userId, name }: { userId: string; name: string }) {
     setError("");
     const parsed = jobSchema.safeParse(form);
     if (!parsed.success) { setError((parsed.error.issues[0]?.message ?? "Please check your details")); return; }
-    const { error } = await supabase.from("jobs").insert({ ...parsed.data, employer_id: userId, employer_name: name });
+    const { error } = await supabase.from("jobs").insert({ ...parsed.data, location: formatLocation(parsed.data) || "Zambia", employer_id: userId, employer_name: name });
     if (error) { setError("Couldn't post the job. Please try again."); return; }
     setForm(empty); setShowForm(false);
     qc.invalidateQueries({ queryKey: ["my-jobs", userId] });
@@ -259,8 +274,8 @@ function EmployerView({ userId, name }: { userId: string; name: string }) {
         <form onSubmit={post} className="bg-card border border-border rounded-xl p-5 mb-6 space-y-3">
           <input className={inputCls} placeholder="Job title (e.g. Plumber needed)" value={form.title} onChange={f("title")} />
           <div className="grid sm:grid-cols-3 gap-3">
-            <select className={inputCls} value={form.category} onChange={f("category")} aria-label="Category">{CATEGORIES.map((c) => <option key={c}>{c}</option>)}</select>
-            <select className={inputCls} value={form.location} onChange={f("location")} aria-label="Location">{LOCATIONS.map((c) => <option key={c}>{c}</option>)}</select>
+            <input className={inputCls} list="job-professions" placeholder="Type of work (e.g. Plumber, Tailor)" value={form.category} onChange={f("category")} aria-label="Profession or service" />
+            <datalist id="job-professions">{PROFESSIONS.map((c) => <option key={c} value={c} />)}</datalist>
             <select className={inputCls} value={form.job_type} onChange={f("job_type")} aria-label="Job type">{JOB_TYPES.map((c) => <option key={c}>{c}</option>)}</select>
           </div>
           <input className={inputCls} placeholder="Pay in Kwacha (e.g. 3,000 - 4,000 per month)" value={form.salary} onChange={f("salary")} />
