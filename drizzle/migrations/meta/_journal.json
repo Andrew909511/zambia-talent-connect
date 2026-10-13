@@ -8,6 +8,13 @@
       "when": 1790528044772,
       "tag": "0000_zamwork_accounts_jobs",
       "breakpoints": true
+    },
+    {
+      "idx": 1,
+      "version": "7",
+      "when": 1791935351931,
+      "tag": "0001_professions_locations",
+      "breakpoints": true
     }
   ]
 }

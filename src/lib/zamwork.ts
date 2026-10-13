@@ -3,8 +3,6 @@ import { useEffect, useState } from "react";
 import type { Session } from "@supabase/supabase-js";
 import { supabase } from "@/integrations/supabase/client";
 
-export const LOCATIONS = ["Lusaka", "Copperbelt", "Ndola", "Kitwe", "Livingstone", "Kabwe", "Chipata", "Solwezi", "Kasama", "Mongu", "Remote"];
-export const CATEGORIES = ["Skilled Trades", "Driving", "Security", "Domestic Work", "IT & Technology", "Construction", "Other"];
 export const JOB_TYPES = ["Full-time", "Part-time", "Contract", "Casual", "Freelance"];
 
 export type Role = "worker" | "employer";

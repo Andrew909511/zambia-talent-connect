@@ -2,6 +2,11 @@ import { useState } from "react";
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { z } from "zod";
 import { RealJobs, RealWorkers } from "@/components/RealListings";
+import { ALL_PLACES, PROFESSIONS, PROVINCE_NAMES, matches, norm } from "@/lib/zambia";
+
+const placeOf = (town: string) => ALL_PLACES.find((p) => norm(p.town) === norm(town))?.province ?? "";
+const PlacesList = () => <datalist id="zm-places">{PROVINCE_NAMES.map((p) => <option key={p} value={p} />)}{ALL_PLACES.map((p) => <option key={p.province + p.town} value={p.town}>{p.province}</option>)}</datalist>;
+const ProfessionsList = () => <datalist id="zm-professions">{PROFESSIONS.map((p) => <option key={p} value={p} />)}</datalist>;
 import { useSession } from "@/lib/zamwork";
 import {
   Search,
@@ -114,8 +119,7 @@ function Index() {
   const [currentView, setCurrentView] = useState<string>(initialView);
   const { user } = useSession();
   const [searchQuery, setSearchQuery] = useState("");
-  const [selectedLocation, setSelectedLocation] = useState("All Locations");
-  const [selectedCategory, setSelectedCategory] = useState("All Categories");
+  const [selectedLocation, setSelectedLocation] = useState("");
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [savedJobs, setSavedJobs] = useState<number[]>([]);
   const [openJob, setOpenJob] = useState<Job | null>(null);
@@ -124,17 +128,12 @@ function Index() {
   const go = (view: string) => { setCurrentView(view); setMobileMenuOpen(false); window.scrollTo({ top: 0 }); };
 
   const filteredJobs = jobs.filter((job) => {
-    const q = searchQuery.toLowerCase();
-    const matchesSearch = job.title.toLowerCase().includes(q) || job.employer.toLowerCase().includes(q);
-    const matchesLocation = selectedLocation === "All Locations" || job.location === selectedLocation;
-    const matchesCategory = selectedCategory === "All Categories" || job.category === selectedCategory;
-    return matchesSearch && matchesLocation && matchesCategory;
+    return matches(searchQuery, job.title, job.employer, job.category, job.description) && matches(selectedLocation, job.location, placeOf(job.location));
   });
 
   const toggleSaveJob = (jobId: number) => setSavedJobs((prev) => (prev.includes(jobId) ? prev.filter((id) => id !== jobId) : [...prev, jobId]));
 
-  const locations = ["All Locations", ...new Set(jobs.map((j) => j.location))];
-  const categoryNames = ["All Categories", ...new Set(jobs.map((j) => j.category))];
+  const filteredWorkers = workers.filter((w) => matches(searchQuery, w.title, w.skills, w.about) && matches(selectedLocation, w.location, placeOf(w.location)));
 
   const JobCard = ({ job }: { job: Job }) => (
     <div className="bg-card rounded-lg border border-border overflow-hidden hover:shadow-lg transition flex flex-col">
@@ -215,9 +214,8 @@ function Index() {
                 </div>
                 <div className="relative">
                   <MapPin className="absolute left-3 top-3.5 w-5 h-5 text-muted-foreground" />
-                  <select value={selectedLocation} onChange={(e) => setSelectedLocation(e.target.value)} className="w-full pl-10 pr-4 py-3 rounded-lg border border-border bg-card text-base focus:outline-none focus:ring-2 focus:ring-primary appearance-none cursor-pointer">
-                    {locations.map((loc) => <option key={loc} value={loc}>{loc}</option>)}
-                  </select>
+                  <input type="text" list="zm-places" placeholder="Town, district or province" value={selectedLocation} onChange={(e) => setSelectedLocation(e.target.value)} className="w-full pl-10 pr-4 py-3 rounded-lg border border-border bg-card text-base focus:outline-none focus:ring-2 focus:ring-primary" />
+                  <PlacesList />
                 </div>
               </div>
               <div className="flex flex-col sm:flex-row gap-3 justify-center">
@@ -261,7 +259,7 @@ function Index() {
               <h2 className="text-2xl sm:text-3xl font-bold mb-8">Popular Categories</h2>
               <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-4">
                 {categories.map((cat) => (
-                  <button key={cat.name} onClick={() => { setSelectedCategory(cat.name); go("jobs"); }} className="p-4 rounded-lg border border-border bg-card hover:border-primary hover:bg-primary/5 transition text-center">
+                  <button key={cat.name} onClick={() => { setSearchQuery(cat.name); go("jobs"); }} className="p-4 rounded-lg border border-border bg-card hover:border-primary hover:bg-primary/5 transition text-center">
                     <div className="text-3xl mb-2">{cat.icon}</div>
                     <p className="font-medium text-sm">{cat.name}</p>
                   </button>
@@ -327,17 +325,16 @@ function Index() {
           <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
             <h1 className="text-3xl font-bold mb-2">Find Jobs</h1>
             <p className="text-sm text-muted-foreground mb-6">Listings marked "Example" are samples to show how jobs appear on Zamwork.</p>
-            <div className="grid sm:grid-cols-3 gap-4 mb-6">
-              <div><label className="block text-sm font-medium mb-2">Search</label><input type="text" placeholder="Job title or employer..." value={searchQuery} onChange={(e) => setSearchQuery(e.target.value)} className="w-full px-4 py-3 rounded-lg border border-border bg-card text-base focus:outline-none focus:ring-2 focus:ring-primary" /></div>
-              <div><label className="block text-sm font-medium mb-2">Location</label><select value={selectedLocation} onChange={(e) => setSelectedLocation(e.target.value)} className="w-full px-4 py-3 rounded-lg border border-border bg-card text-base focus:outline-none focus:ring-2 focus:ring-primary cursor-pointer">{locations.map((loc) => <option key={loc} value={loc}>{loc}</option>)}</select></div>
-              <div><label className="block text-sm font-medium mb-2">Category</label><select value={selectedCategory} onChange={(e) => setSelectedCategory(e.target.value)} className="w-full px-4 py-3 rounded-lg border border-border bg-card text-base focus:outline-none focus:ring-2 focus:ring-primary cursor-pointer">{categoryNames.map((cat) => <option key={cat} value={cat}>{cat}</option>)}</select></div>
+            <div className="grid sm:grid-cols-2 gap-4 mb-6">
+              <div><label className="block text-sm font-medium mb-2">Profession, skill or service</label><input type="text" list="zm-professions" placeholder="e.g. Plumber, Tailor, Driver..." value={searchQuery} onChange={(e) => setSearchQuery(e.target.value)} className="w-full px-4 py-3 rounded-lg border border-border bg-card text-base focus:outline-none focus:ring-2 focus:ring-primary" /><ProfessionsList /></div>
+              <div><label className="block text-sm font-medium mb-2">Location</label><input type="text" list="zm-places" placeholder="Town, district or province" value={selectedLocation} onChange={(e) => setSelectedLocation(e.target.value)} className="w-full px-4 py-3 rounded-lg border border-border bg-card text-base focus:outline-none focus:ring-2 focus:ring-primary" /><PlacesList /></div>
             </div>
             <div className="mb-6"><SafetyNotice /></div>
-            <RealJobs filters={{ search: searchQuery, location: selectedLocation, category: selectedCategory }} />
+            <RealJobs filters={{ search: searchQuery, location: selectedLocation }} />
             <h2 className="text-xl font-bold mb-2">Example listings</h2>
             <div className="mb-4 text-sm text-muted-foreground">Found {filteredJobs.length} {filteredJobs.length === 1 ? "job" : "jobs"}</div>
             {filteredJobs.length === 0 ? (
-              <div className="text-center py-12"><Briefcase className="w-16 h-16 text-muted-foreground mx-auto mb-4 opacity-50" /><p className="text-lg text-muted-foreground">No jobs found matching your criteria.</p><button onClick={() => { setSearchQuery(""); setSelectedLocation("All Locations"); setSelectedCategory("All Categories"); }} className="mt-3 text-primary font-medium">Clear filters</button></div>
+              <div className="text-center py-12"><Briefcase className="w-16 h-16 text-muted-foreground mx-auto mb-4 opacity-50" /><p className="text-lg text-muted-foreground">No jobs found matching your criteria.</p><button onClick={() => { setSearchQuery(""); setSelectedLocation(""); }} className="mt-3 text-primary font-medium">Clear filters</button></div>
             ) : (
               <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-6">{filteredJobs.map((job) => <JobCard key={job.id} job={job} />)}</div>
             )}
@@ -350,10 +347,15 @@ function Index() {
           <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
             <h1 className="text-3xl font-bold mb-2">Find Workers</h1>
             <p className="text-sm text-muted-foreground mb-6">Profiles marked "Example" are samples to show how worker profiles appear on Zamwork.</p>
+            <div className="grid sm:grid-cols-2 gap-4 mb-6">
+              <div><label className="block text-sm font-medium mb-2">Profession, skill or service</label><input type="text" list="zm-professions" placeholder="e.g. Electrician, Barber, Tutor..." value={searchQuery} onChange={(e) => setSearchQuery(e.target.value)} className="w-full px-4 py-3 rounded-lg border border-border bg-card text-base focus:outline-none focus:ring-2 focus:ring-primary" /><ProfessionsList /></div>
+              <div><label className="block text-sm font-medium mb-2">Location</label><input type="text" list="zm-places" placeholder="Town, district or province" value={selectedLocation} onChange={(e) => setSelectedLocation(e.target.value)} className="w-full px-4 py-3 rounded-lg border border-border bg-card text-base focus:outline-none focus:ring-2 focus:ring-primary" /><PlacesList /></div>
+            </div>
             <div className="mb-6"><SafetyNotice /></div>
-            <RealWorkers />
+            <RealWorkers filters={{ search: searchQuery, location: selectedLocation }} />
             <h2 className="text-xl font-bold mb-4">Example profiles</h2>
-            <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-6">{workers.map((w) => <WorkerCard key={w.id} worker={w} />)}</div>
+            {filteredWorkers.length === 0 && <p className="text-muted-foreground mb-4">No example profiles match.</p>}
+            <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-6">{filteredWorkers.map((w) => <WorkerCard key={w.id} worker={w} />)}</div>
           </div>
         </section>
       )}
