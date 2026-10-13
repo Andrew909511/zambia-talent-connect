@@ -4,17 +4,16 @@ import { MapPin, X, User } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useQueryClient } from "@tanstack/react-query";
 import { inputCls, useAccount, usePublicJobs, usePublicWorkers, useSession } from "@/lib/zamwork";
+import { matches } from "@/lib/zambia";
 
-type Filters = { search: string; location: string; category: string };
+type Filters = { search: string; location: string };
 
 export function RealJobs({ filters }: { filters: Filters }) {
   const jobs = usePublicJobs();
   const [open, setOpen] = useState<NonNullable<typeof jobs.data>[number] | null>(null);
-  const q = filters.search.toLowerCase();
   const list = (jobs.data ?? []).filter((j) =>
-    (j.title.toLowerCase().includes(q) || j.employer_name.toLowerCase().includes(q)) &&
-    (filters.location === "All Locations" || j.location === filters.location) &&
-    (filters.category === "All Categories" || j.category === filters.category));
+    matches(filters.search, j.title, j.employer_name, j.category, j.description, j.requirements) &&
+    matches(filters.location, j.location, j.town, j.district, j.province));
   if (jobs.isLoading) return <p className="text-muted-foreground mb-6">Loading jobs…</p>;
   if (!jobs.data?.length) return null;
   return (
@@ -93,17 +92,19 @@ function ApplyModal({ job, onClose }: { job: { id: string; title: string; employ
   );
 }
 
-export function RealWorkers() {
+export function RealWorkers({ filters }: { filters: Filters }) {
   const workers = usePublicWorkers();
   if (!workers.data?.length) return null;
+  const list = workers.data.filter((w) => matches(filters.search, w.skills, w.full_name) && matches(filters.location, w.location, w.town, w.district, w.province));
   return (
     <div className="mb-10">
-      <h2 className="text-xl font-bold mb-4">Workers on Zamwork ({workers.data.length})</h2>
+      <h2 className="text-xl font-bold mb-4">Workers on Zamwork ({list.length})</h2>
+      {list.length === 0 && <p className="text-muted-foreground">No workers match your search yet.</p>}
       <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4">
-        {workers.data.map((w) => (
+        {list.map((w) => (
           <div key={w.id} className="bg-card border border-border rounded-lg p-4 flex items-center gap-3">
             <div className="w-12 h-12 rounded-full bg-primary/10 flex items-center justify-center"><User className="w-6 h-6 text-primary" /></div>
-            <div><p className="font-semibold">{w.full_name}</p><p className="text-sm text-muted-foreground flex items-center gap-1"><MapPin className="w-3 h-3" />{w.location}</p></div>
+            <div><p className="font-semibold">{w.full_name}</p>{w.skills?.length > 0 && <p className="text-sm text-primary">{w.skills.join(" · ")}</p>}<p className="text-sm text-muted-foreground flex items-center gap-1"><MapPin className="w-3 h-3" />{w.location}</p></div>
           </div>
         ))}
       </div>

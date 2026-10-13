@@ -273,11 +273,12 @@ function EmployerView({ userId, name }: { userId: string; name: string }) {
       {showForm && (
         <form onSubmit={post} className="bg-card border border-border rounded-xl p-5 mb-6 space-y-3">
           <input className={inputCls} placeholder="Job title (e.g. Plumber needed)" value={form.title} onChange={f("title")} />
-          <div className="grid sm:grid-cols-3 gap-3">
+          <div className="grid sm:grid-cols-2 gap-3">
             <input className={inputCls} list="job-professions" placeholder="Type of work (e.g. Plumber, Tailor)" value={form.category} onChange={f("category")} aria-label="Profession or service" />
             <datalist id="job-professions">{PROFESSIONS.map((c) => <option key={c} value={c} />)}</datalist>
             <select className={inputCls} value={form.job_type} onChange={f("job_type")} aria-label="Job type">{JOB_TYPES.map((c) => <option key={c}>{c}</option>)}</select>
           </div>
+          <LocationPicker value={form} onChange={(pl: Place) => setForm({ ...form, ...pl })} />
           <input className={inputCls} placeholder="Pay in Kwacha (e.g. 3,000 - 4,000 per month)" value={form.salary} onChange={f("salary")} />
           <textarea className={inputCls} rows={4} placeholder="Describe the work" value={form.description} onChange={f("description")} />
           <textarea className={inputCls} rows={3} placeholder="Requirements (one per line, optional)" value={form.requirements} onChange={f("requirements")} />
