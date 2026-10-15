@@ -8,3 +8,6 @@
 > Commits you push to the connected branch sync back to Lovable and show up in
 > the editor, so keep the branch in a working state.
 <!-- LOVABLE:END -->
+
+- Keep the home presentation in a dedicated component, with search state and listing interactions owned by the existing index route, so visual refreshes preserve working account and search flows.
+- Use global semantic theme tokens and the shared Button component for new branded UI so all pages retain a consistent identity.
