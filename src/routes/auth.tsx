@@ -67,7 +67,10 @@ function AuthPage() {
     try {
       if (mode === "signin") {
         const { error } = await supabase.auth.signInWithPassword({ email: form.email.trim(), password: form.password });
-        if (error) setError(error.message === "Invalid login credentials" ? "Wrong email or password." : error.message);
+        if (error) setError(
+          error.message === "Invalid login credentials" ? "Wrong email or password. If you signed up with Google, use \"Continue with Google\"."
+          : /not confirmed/i.test(error.message) ? "Your email isn't confirmed yet. Please check your inbox, or try again in a moment."
+          : error.message);
       } else {
         const parsed = signupSchema.safeParse(form);
         if (!parsed.success) { setError((parsed.error.issues[0]?.message ?? "Please check your details")); return; }
