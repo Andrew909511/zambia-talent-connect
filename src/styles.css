@@ -19,6 +19,10 @@
  */
 
 @theme inline {
+  --font-sans: "Manrope", Arial, sans-serif;
+  --color-brand-gold: var(--brand-gold);
+  --color-brand-ink: var(--brand-ink);
+  --color-hero-foreground: var(--hero-foreground);
   --radius-sm: calc(var(--radius) - 4px);
   --radius-md: calc(var(--radius) - 2px);
   --radius-lg: var(--radius);
@@ -62,20 +66,24 @@
 }
 
 :root {
-  --radius: 0.625rem;
-  --background: oklch(1 0 0);
-  --foreground: oklch(0.129 0.042 264.695);
+  --radius: 0.5rem;
+  --brand-gold: oklch(0.79 0.164 75);
+  --brand-ink: oklch(0.27 0.05 210);
+  --hero-foreground: oklch(0.99 0.008 85);
+  --hero-scrim: oklch(0.22 0.035 200);
+  --background: oklch(0.988 0.003 90);
+  --foreground: oklch(0.27 0.05 210);
   --card: oklch(1 0 0);
   --card-foreground: oklch(0.129 0.042 264.695);
   --popover: oklch(1 0 0);
   --popover-foreground: oklch(0.129 0.042 264.695);
-  --primary: oklch(0.208 0.042 265.755);
+  --primary: oklch(0.32 0.055 210);
   --primary-foreground: oklch(0.984 0.003 247.858);
-  --secondary: oklch(0.968 0.007 247.896);
+  --secondary: oklch(0.965 0.014 150);
   --secondary-foreground: oklch(0.208 0.042 265.755);
   --muted: oklch(0.968 0.007 247.896);
-  --muted-foreground: oklch(0.554 0.046 257.417);
-  --accent: oklch(0.968 0.007 247.896);
+  --muted-foreground: oklch(0.51 0.024 210);
+  --accent: oklch(0.88 0.12 80);
   --accent-foreground: oklch(0.208 0.042 265.755);
   --destructive: oklch(0.577 0.245 27.325);
   --destructive-foreground: oklch(0.984 0.003 247.858);
@@ -142,3 +150,15 @@
     color: var(--color-foreground);
   }
 }
+
+body { font-family: var(--font-sans); letter-spacing: 0; }
+.zw-hero { min-height: 550px; }
+.zw-hero-image { object-position: center 47%; }
+.zw-hero-shade { background: linear-gradient(90deg, var(--hero-scrim) 0%, color-mix(in oklch, var(--hero-scrim) 90%, transparent) 26%, color-mix(in oklch, var(--hero-scrim) 40%, transparent) 57%, transparent 80%); }
+.zw-eyebrow { color: var(--primary); font-size: 11px; font-weight: 800; letter-spacing: 0; }
+.zw-path { transition: transform 180ms ease, box-shadow 180ms ease; }
+.zw-path:hover { transform: translateY(-4px); box-shadow: 0 12px 24px color-mix(in oklch, var(--primary) 9%, transparent); }
+.zw-reveal { animation: zw-enter 650ms ease both; }
+@keyframes zw-enter { from { opacity: 0; transform: translateY(12px); } to { opacity: 1; transform: translateY(0); } }
+@media (max-width: 640px) { .zw-hero { min-height: 560px; } .zw-hero-image { object-position: 62% center; } .zw-hero-shade { background: color-mix(in oklch, var(--hero-scrim) 78%, transparent); } }
+@media (prefers-reduced-motion: reduce) { .zw-reveal { animation: none; } .zw-path { transition: none; } .zw-path:hover { transform: none; } }

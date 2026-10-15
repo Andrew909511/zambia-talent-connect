@@ -1,4 +1,7 @@
 import { useState } from "react";
+import { ZamworkHome } from "@/components/ZamworkHome";
+import { Button } from "@/components/ui/button";
+import brandSymbol from "@/assets/zamwork_symbol.png.asset.json";
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { z } from "zod";
 import { RealJobs, RealWorkers } from "@/components/RealListings";
@@ -168,23 +171,23 @@ function Index() {
   );
 
   const navBtn = (view: string, label: string) => (
-    <button onClick={() => go(view)} className={`text-sm font-medium transition ${currentView === view ? "text-primary" : "text-muted-foreground hover:text-foreground"}`}>{label}</button>
+    <Button variant="ghost" onClick={() => go(view)} className={`text-sm font-medium transition ${currentView === view ? "text-primary" : "text-muted-foreground hover:text-foreground"}`}>{label}</Button>
   );
 
   return (
     <div className="min-h-screen bg-background text-foreground">
-      <div className="bg-primary text-primary-foreground text-center text-xs sm:text-sm py-2 px-4">Zamwork is now live 🇿🇲 — free to use during our launch</div>
+      <div className="bg-brand-gold text-brand-ink text-center text-xs sm:text-sm py-2 px-4 font-medium">Zamwork is now live 🇿🇲 — free to use during our launch</div>
       <header className="sticky top-0 z-50 bg-card border-b border-border shadow-sm">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex justify-between items-center h-16">
-            <button onClick={() => go("home")} className="flex items-center gap-2">
-              <div className="w-10 h-10 bg-primary rounded-lg flex items-center justify-center"><Briefcase className="w-6 h-6 text-primary-foreground" /></div>
-              <span className="text-xl font-bold text-foreground">Zamwork</span>
-            </button>
+            <Button variant="ghost" onClick={() => go("home")} className="flex items-center gap-2 p-0 hover:bg-transparent h-auto" aria-label="ZamWork home">
+              <img src={brandSymbol.url} alt="" width={489} height={324} className="w-12 h-9 object-contain rounded-sm" />
+              <span className="text-2xl font-extrabold text-primary">ZamWork</span>
+            </Button>
             <nav className="hidden md:flex gap-8">{navBtn("home", "Home")}{navBtn("jobs", "Find Jobs")}{navBtn("workers", "Find Workers")}</nav>
             <div className="flex items-center gap-3">
               <Link to={user ? "/dashboard" : "/auth"} className="hidden sm:flex items-center gap-2 px-4 py-2 rounded-lg bg-primary text-primary-foreground hover:bg-primary/90 transition font-medium text-sm"><User className="w-4 h-4" />{user ? "My Account" : "Sign In"}</Link>
-              <button onClick={() => setMobileMenuOpen(!mobileMenuOpen)} aria-label="Menu" className="md:hidden p-2">{mobileMenuOpen ? <X className="w-6 h-6" /> : <Menu className="w-6 h-6" />}</button>
+              <Button variant="ghost" size="icon" onClick={() => setMobileMenuOpen(!mobileMenuOpen)} aria-label="Menu" className="md:hidden p-2">{mobileMenuOpen ? <X className="w-6 h-6" /> : <Menu className="w-6 h-6" />}</Button>
             </div>
           </div>
           {mobileMenuOpen && (
@@ -198,127 +201,7 @@ function Index() {
         </div>
       </header>
 
-      {currentView === "home" && (
-        <>
-          <section className="bg-gradient-to-br from-primary/5 to-accent/5 py-12 sm:py-20">
-            <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-              <div className="text-center mb-10">
-                <p className="text-primary font-semibold mb-3">Find Work. Find Talent. Connect.</p>
-                <h1 className="text-3xl sm:text-5xl font-bold text-foreground mb-4">Connecting Zambians to Jobs and Opportunities</h1>
-                <p className="text-lg text-muted-foreground max-w-2xl mx-auto">Zamwork is a growing platform connecting job seekers, skilled workers, employers and clients across Zambia.</p>
-              </div>
-              <div className="grid sm:grid-cols-2 gap-3 max-w-2xl mx-auto mb-6">
-                <div className="relative">
-                  <Search className="absolute left-3 top-3.5 w-5 h-5 text-muted-foreground" />
-                  <input type="text" placeholder="What work are you looking for?" value={searchQuery} onChange={(e) => setSearchQuery(e.target.value)} className="w-full pl-10 pr-4 py-3 rounded-lg border border-border bg-card text-base focus:outline-none focus:ring-2 focus:ring-primary" />
-                </div>
-                <div className="relative">
-                  <MapPin className="absolute left-3 top-3.5 w-5 h-5 text-muted-foreground" />
-                  <input type="text" list="zm-places" placeholder="Town, district or province" value={selectedLocation} onChange={(e) => setSelectedLocation(e.target.value)} className="w-full pl-10 pr-4 py-3 rounded-lg border border-border bg-card text-base focus:outline-none focus:ring-2 focus:ring-primary" />
-                  <PlacesList />
-                </div>
-              </div>
-              <div className="flex flex-col sm:flex-row gap-3 justify-center">
-                <button onClick={() => go("jobs")} className="px-8 py-3 bg-primary text-primary-foreground rounded-lg font-semibold hover:bg-primary/90 transition flex items-center justify-center gap-2">Find Jobs <ArrowRight className="w-4 h-4" /></button>
-                <button onClick={() => go("workers")} className="px-8 py-3 bg-secondary text-secondary-foreground rounded-lg font-semibold hover:bg-secondary/90 transition flex items-center justify-center gap-2">Find Workers <ArrowRight className="w-4 h-4" /></button>
-              </div>
-            </div>
-          </section>
-
-          <section className="py-8">
-            <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
-              <div className="rounded-xl border-2 border-primary/30 bg-primary/5 p-6 text-center">
-                <h2 className="text-xl sm:text-2xl font-bold mb-2">Zamwork is now live 🇿🇲</h2>
-                <p className="text-muted-foreground">Join our growing community of job seekers, skilled workers, employers and clients. Create your profile, discover opportunities and start making connections — free during our launch.</p>
-              </div>
-            </div>
-          </section>
-
-          <section className="py-12">
-            <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-              <h2 className="text-2xl sm:text-3xl font-bold mb-8 text-center">Who Zamwork Is For</h2>
-              <div className="grid md:grid-cols-3 gap-6">
-                {[
-                  { icon: UserPlus, title: "For Job Seekers", text: "Create your profile and discover job opportunities.", action: () => go("jobs"), cta: "Browse jobs" },
-                  { icon: Hammer, title: "For Skilled Workers", text: "Showcase your skills and make it easier for people to find you.", action: () => {}, to: "worker", cta: "Create a profile" },
-                  { icon: Building2, title: "For Employers & Clients", text: "Find skilled people for jobs and services you need.", action: () => go("workers"), cta: "Find workers" },
-                ].map((c) => (
-                  <div key={c.title} className="bg-card border border-border rounded-lg p-6 flex flex-col">
-                    <c.icon className="w-8 h-8 text-primary mb-3" />
-                    <h3 className="font-bold text-lg mb-2">{c.title}</h3>
-                    <p className="text-muted-foreground mb-4 flex-1">{c.text}</p>
-                    {c.to ? <Link to="/auth" search={{ role: "worker" }} className="text-primary font-medium flex items-center gap-2 py-2">{c.cta} <ArrowRight className="w-4 h-4" /></Link> : <button onClick={c.action} className="text-primary font-medium flex items-center gap-2 py-2">{c.cta} <ArrowRight className="w-4 h-4" /></button>}
-                  </div>
-                ))}
-              </div>
-            </div>
-          </section>
-
-          <section className="py-12 bg-muted/30">
-            <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-              <h2 className="text-2xl sm:text-3xl font-bold mb-8">Popular Categories</h2>
-              <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-4">
-                {categories.map((cat) => (
-                  <button key={cat.name} onClick={() => { setSearchQuery(cat.name); go("jobs"); }} className="p-4 rounded-lg border border-border bg-card hover:border-primary hover:bg-primary/5 transition text-center">
-                    <div className="text-3xl mb-2">{cat.icon}</div>
-                    <p className="font-medium text-sm">{cat.name}</p>
-                  </button>
-                ))}
-              </div>
-            </div>
-          </section>
-
-          <section className="py-12">
-            <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-              <div className="flex justify-between items-center mb-2 gap-4"><h2 className="text-2xl sm:text-3xl font-bold">Example Jobs</h2><button onClick={() => go("jobs")} className="text-primary hover:text-primary/80 font-medium flex items-center gap-2 whitespace-nowrap">View All <ArrowRight className="w-4 h-4" /></button></div>
-              <p className="text-sm text-muted-foreground mb-8">These are sample listings to show how jobs will appear on Zamwork.</p>
-              <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-6">{jobs.slice(0, 3).map((job) => <JobCard key={job.id} job={job} />)}</div>
-            </div>
-          </section>
-
-          <section className="py-12 bg-muted/30">
-            <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-              <h2 className="text-2xl sm:text-3xl font-bold mb-2">Example Worker Profiles</h2>
-              <p className="text-sm text-muted-foreground mb-8">Sample profiles showing how skilled workers can present themselves.</p>
-              <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-6">{workers.map((w) => <WorkerCard key={w.id} worker={w} />)}</div>
-            </div>
-          </section>
-
-          <section className="py-12">
-            <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-              <h2 className="text-2xl sm:text-3xl font-bold mb-12 text-center">How Zamwork Works</h2>
-              <div className="grid md:grid-cols-3 gap-8">
-                {[["1", "Create Profile", "Sign up and tell us about yourself. Add skills, describe your business."], ["2", "Find & Connect", "Browse jobs, apply, or search workers. Message to discuss opportunities."], ["3", "Work & Grow", "Complete jobs, build your reputation, earn on your terms."]].map(([n, t, d]) => (
-                  <div key={n} className="text-center"><div className="w-16 h-16 bg-primary/10 rounded-full flex items-center justify-center mx-auto mb-4"><span className="text-2xl font-bold text-primary">{n}</span></div><h3 className="font-bold text-lg mb-2">{t}</h3><p className="text-muted-foreground">{d}</p></div>
-                ))}
-              </div>
-            </div>
-          </section>
-
-          <section className="py-12 bg-muted/30">
-            <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-              <h2 className="text-2xl sm:text-3xl font-bold mb-8 text-center">Why Choose Zamwork?</h2>
-              <div className="grid md:grid-cols-3 gap-6 mb-8">
-                <div className="flex gap-4"><Shield className="w-6 h-6 text-primary flex-shrink-0 mt-1" /><div><h3 className="font-bold mb-2">Safety First</h3><p className="text-muted-foreground text-sm">Clear profiles and listings, plus safety guidance to help you connect with confidence.</p></div></div>
-                <div className="flex gap-4"><Zap className="w-6 h-6 text-primary flex-shrink-0 mt-1" /><div><h3 className="font-bold mb-2">Fast & Simple</h3><p className="text-muted-foreground text-sm">Easy to use. Works on any phone. No complicated process.</p></div></div>
-                <div className="flex gap-4"><TrendingUp className="w-6 h-6 text-primary flex-shrink-0 mt-1" /><div><h3 className="font-bold mb-2">Free During Launch</h3><p className="text-muted-foreground text-sm">Creating a profile, searching, viewing listings and applying are all free.</p></div></div>
-              </div>
-              <div className="max-w-3xl mx-auto"><SafetyNotice /></div>
-            </div>
-          </section>
-
-          <section className="py-12 sm:py-16 bg-gradient-to-r from-primary to-primary/80">
-            <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
-              <h2 className="text-3xl sm:text-4xl font-bold text-primary-foreground mb-4">Ready to Get Started?</h2>
-              <p className="text-lg text-primary-foreground/90 mb-8">Be one of the first to join Zamwork — find work, find talent and connect. Free during our launch.</p>
-              <div className="flex flex-col sm:flex-row gap-4 justify-center">
-                <Link to="/auth" search={{ role: "worker" }} className="px-8 py-3 bg-accent text-accent-foreground rounded-lg font-semibold hover:bg-accent/90 transition">Sign Up as Worker</Link>
-                <Link to="/auth" search={{ role: "employer" }} className="px-8 py-3 bg-primary-foreground text-primary rounded-lg font-semibold hover:bg-primary-foreground/90 transition">Sign Up as Employer</Link>
-              </div>
-            </div>
-          </section>
-        </>
-      )}
+      {currentView === "home" && <ZamworkHome go={go} search={searchQuery} setSearch={setSearchQuery} location={selectedLocation} setLocation={setSelectedLocation} />}
 
       {currentView === "jobs" && (
         <section className="py-8">
@@ -362,8 +245,8 @@ function Index() {
 
       <footer className="border-t border-border py-8 mt-8">
         <div className="max-w-7xl mx-auto px-4 text-center text-sm text-muted-foreground">
-          <p className="font-bold text-foreground mb-1">Zamwork</p>
-          <p>Find Work. Find Talent. Connect. — Free during our launch.</p>
+          <p className="font-extrabold text-primary text-2xl mb-2">ZamWork</p>
+          <p>For workers. For people who need them.</p>
         </div>
       </footer>
 
