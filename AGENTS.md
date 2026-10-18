@@ -11,3 +11,5 @@
 
 - Keep the home presentation in a dedicated component, with search state and listing interactions owned by the existing index route, so visual refreshes preserve working account and search flows.
 - Use global semantic theme tokens and the shared Button component for new branded UI so all pages retain a consistent identity.
+- Keep npm's committed package-lock.json synchronized with package.json and use npm 10.9.4 on Node 22.12+ in CI because current TanStack Start packages do not support Node 20.
+- Gate GitHub Pages SPA-shell output and disabled Nitro behind GITHUB_PAGES_BUILD so static hosting works without changing Lovable's server deployment; derive router basepath from Vite's BASE_URL for subpath navigation.
