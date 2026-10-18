@@ -2,5 +2,6 @@
 - [x] Apply Facebook-inspired identity and welcoming home page.
 - [x] Preserve search and registration entry points.
 - [x] Verify desktop and mobile appearance and navigation.
-- [ ] Repair npm dependency resolution and lockfile for Node.js 20.
-- [ ] Align GitHub Actions installation and verify dependency installation and preview checks.
+- [x] Repair npm dependency resolution and regenerate npm lockfile; use Node.js 22 because current core dependencies require it.
+- [x] Align GitHub Actions installation and verify clean npm install, npm ci, compilation and registration-page rendering.
+- [ ] Confirm the updated GitHub Pages build in GitHub Actions (blocked on the next remote workflow run; local preview compilation is clean).
