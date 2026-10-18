@@ -33,13 +33,28 @@ jobs:
       - name: Setup npm
         run: npm install -g npm@10.9.4
 
+      - name: Test Pages configuration
+        run: node --test .github/scripts/pages.test.mjs
+
+      - name: Verify repository and initialize GitHub Pages
+        env:
+          # First-time setup or changing a legacy source requires Administration
+          # and Pages write access; the normal GITHUB_TOKEN cannot enable Pages.
+          GH_TOKEN: ${{ secrets.PAGES_ADMIN_TOKEN || github.token }}
+        run: node .github/scripts/pages.mjs initialize
+
+      - name: Setup GitHub Pages
+        id: pages
+        uses: actions/configure-pages@v5
+
       - name: Install dependencies
         run: npm ci --no-audit --no-fund
 
       - name: Build Zamwork
         env:
           GITHUB_PAGES_BUILD: 'true'
-        run: npm run build -- --base=/zambia-talent-connect/
+          PAGES_BASE_PATH: ${{ steps.pages.outputs.base_path }}/
+        run: npm run build -- --base="$PAGES_BASE_PATH"
 
       - name: Prepare SPA fallback
         run: |
@@ -47,8 +62,10 @@ jobs:
           cp dist/client/index.html dist/client/404.html
           touch dist/client/.nojekyll
 
-      - name: Setup GitHub Pages
-        uses: actions/configure-pages@v5
+      - name: Validate production Pages artifact
+        env:
+          PAGES_BASE_PATH: ${{ steps.pages.outputs.base_path }}/
+        run: node .github/scripts/pages.mjs validate
 
       - name: Upload website
         uses: actions/upload-pages-artifact@v3
@@ -67,3 +84,11 @@ jobs:
       - name: Deploy to GitHub Pages
         id: deployment
         uses: actions/deploy-pages@v4
+
+      - name: Verify deployed website
+        env:
+          PAGE_URL: ${{ steps.deployment.outputs.page_url }}
+        run: |
+          curl --fail --location --retry 6 --retry-all-errors --retry-delay 10 "$PAGE_URL" --output /tmp/zamwork-deployed.html
+          test -s /tmp/zamwork-deployed.html
+          grep -q 'type="module"' /tmp/zamwork-deployed.html
