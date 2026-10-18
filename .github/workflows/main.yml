@@ -26,24 +26,26 @@ jobs:
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: 20
+          # Current TanStack Start dependencies require Node >=22.12.0.
+          node-version: '22.22.0'
+          cache: npm
 
       - name: Setup npm
-        run: npm install -g npm@10.8.2
+        run: npm install -g npm@10.9.4
 
       - name: Install dependencies
-        run: |
-          if [ -f package-lock.json ]; then
-            npm ci
-          else
-            npm install
-          fi
+        run: npm ci --no-audit --no-fund
 
       - name: Build Zamwork
+        env:
+          GITHUB_PAGES_BUILD: 'true'
         run: npm run build -- --base=/zambia-talent-connect/
 
       - name: Prepare SPA fallback
-        run: cp dist/index.html dist/404.html
+        run: |
+          test -s dist/client/index.html
+          cp dist/client/index.html dist/client/404.html
+          touch dist/client/.nojekyll
 
       - name: Setup GitHub Pages
         uses: actions/configure-pages@v5
@@ -51,7 +53,7 @@ jobs:
       - name: Upload website
         uses: actions/upload-pages-artifact@v3
         with:
-          path: ./dist
+          path: ./dist/client
 
   deploy:
     environment:
