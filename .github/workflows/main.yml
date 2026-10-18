@@ -28,8 +28,16 @@ jobs:
         with:
           node-version: 20
 
+      - name: Setup npm
+        run: npm install -g npm@10.8.2
+
       - name: Install dependencies
-        run: npm install
+        run: |
+          if [ -f package-lock.json ]; then
+            npm ci
+          else
+            npm install
+          fi
 
       - name: Build Zamwork
         run: npm run build -- --base=/zambia-talent-connect/
