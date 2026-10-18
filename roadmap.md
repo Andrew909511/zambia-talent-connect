@@ -4,4 +4,7 @@
 - [x] Verify desktop and mobile appearance and navigation.
 - [x] Repair npm dependency resolution and regenerate npm lockfile; use Node.js 22 because current core dependencies require it.
 - [x] Align GitHub Actions installation and verify clean npm install, npm ci, compilation and registration-page rendering.
-- [ ] Confirm the updated GitHub Pages build in GitHub Actions (blocked on the next remote workflow run; local preview compilation is clean).
+- [ ] Verify the connected GitHub repository and live Pages settings (blocked: no accessible GitHub API connection; Git sync settings are only visible in Lovable's Git settings).
+- [ ] Initialize missing Pages sites, select the Actions source, and derive the build base path from Pages metadata.
+- [ ] Test Pages initialization and artifact validation without changing dependencies.
+- [ ] Confirm a fresh production build and deployment in GitHub Actions (blocked on repository access and a remote workflow run).
