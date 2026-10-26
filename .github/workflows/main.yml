@@ -36,16 +36,13 @@ jobs:
       - name: Test Pages configuration
         run: node --test .github/scripts/pages.test.mjs
 
-      - name: Verify repository and initialize GitHub Pages
-        env:
-          # First-time setup or changing a legacy source requires Administration
-          # and Pages write access; the normal GITHUB_TOKEN cannot enable Pages.
-          GH_TOKEN: ${{ secrets.PAGES_ADMIN_TOKEN || github.token }}
-        run: node .github/scripts/pages.mjs initialize
-
       - name: Setup GitHub Pages
         id: pages
         uses: actions/configure-pages@v5
+        with:
+          # Enable Pages manually in repository Settings → Pages → GitHub Actions.
+          # Never attempt to create a missing Pages site with GITHUB_TOKEN.
+          enablement: false
 
       - name: Install dependencies
         run: npm ci --no-audit --no-fund
