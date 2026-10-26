@@ -7,21 +7,19 @@ hard-coded owner or repository. Confirm that repository matches **Lovable →
 Project settings → Git**. Git sync and GitHub API access are separate connections;
 local project files cannot establish the live sync status.
 
-If Pages is absent, or still uses a branch-based publishing source, add a
-repository Actions secret named **PAGES_ADMIN_TOKEN** in **GitHub → repository →
-Settings → Secrets and variables → Actions**. Use a fine-grained personal access
-token scoped to this repository with **Administration: read and write** and
-**Pages: read and write**, or an equivalent GitHub App installation token.
-Organization approval may be required. Never put the token in source or chat.
+Enable Pages manually in **GitHub → repository → Settings → Pages** and select
+**GitHub Actions** under **Build and deployment → Source** before running the
+workflow. If Pages is already enabled with this source, no setup is needed.
 
-GitHub's normal `GITHUB_TOKEN` can deploy an initialized Pages site but cannot
-enable a missing one. Adding `pages: write` alone does not solve first-time setup.
+The workflow uses standard `actions/configure-pages`,
+`actions/upload-pages-artifact`, and `actions/deploy-pages`. Automatic site
+enablement is explicitly disabled. There is no custom Pages REST API logic,
+administrator secret, or personal access token requirement. `GITHUB_TOKEN` is
+used only by the standard actions for an already-enabled Pages site, with
+`contents: read`, `pages: write`, and `id-token: write` permissions.
 
-The initialization script first checks repository access, then handles an absent
-site with `POST /repos/{owner}/{repo}/pages` and `{"build_type":"workflow"}`.
-Existing branch-based sites are switched with `PUT` using the same payload.
-It verifies the site before `actions/configure-pages` reads it. Other API failures
-are reported with their status rather than treated as missing sites.
+If `configure-pages` reports a missing site, enable it in Settings as above;
+the workflow intentionally does not create it.
 
 ## Source, paths, and output
 
@@ -42,16 +40,21 @@ are reported with their status rather than treated as missing sites.
 
 ## Verification
 
-Local setup tests (mock GitHub responses and temporary artifact fixtures):
+Local deployment-rule tests and temporary artifact fixtures:
 
 ```sh
 node --test .github/scripts/pages.test.mjs
 ```
 
 Run the updated workflow after these changes reach GitHub. It performs the tests,
-live repository/Pages verification and initialization, clean installation, a fresh
+standard Pages configuration, clean installation, a fresh
 production build, output validation, artifact upload, deployment, and an HTTP
 check of the returned Pages URL. Check both the build and deploy jobs.
+
+This TanStack Start application outputs **dist/client/index.html**, not
+`dist/index.html`; moving it would unnecessarily change working application
+configuration. The workflow checks that exact file before copying the fallback
+and uploading **dist/client**.
 
 The local tests do not prove GitHub credentials, repository settings, actual
 production output, or a live deployment. Those remain unverified until the remote
