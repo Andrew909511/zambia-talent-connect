@@ -6,5 +6,6 @@
 - [x] Align GitHub Actions installation and verify clean npm install, npm ci, compilation and registration-page rendering.
 - [x] Remove custom Pages API initialization and administrator-token requirements; use standard Pages actions with manual site enablement.
 - [x] Validate corrected workflow YAML syntax, permissions, build-before-upload order, manual enablement, and artifact tests (2 tests passed); application features and dependencies unchanged.
-- [ ] Enable Pages manually with GitHub Actions as the source if necessary (requires repository settings access).
-- [ ] Confirm a fresh Pages production build and deployment in GitHub Actions (requires a remote workflow run; expected index is dist/client/index.html).
+- [ ] Update and validate standard Pages actions, stage the static production website in dist, and preserve the SPA fallback without changing application features or dependencies.
+- [ ] Confirm manual Pages enablement with GitHub Actions as the source (user is configuring repository settings; remote settings access unavailable here).
+- [ ] Confirm a fresh Pages production build and deployment in GitHub Actions (requires a remote workflow run).

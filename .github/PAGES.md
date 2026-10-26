@@ -33,9 +33,11 @@ the workflow intentionally does not create it.
   `/`. Router navigation already uses Vite's `BASE_URL`.
 - `GITHUB_PAGES_BUILD=true` enables the existing static SPA build only for Pages.
   Lovable's server deployment remains unchanged.
-- The build, validator, and artifact upload all use **dist/client**. `index.html`
-  must exist, `404.html` must match it, and `.nojekyll` and bundled assets must be
-  present. The validator checks asset URLs against the actual Pages base path.
+- TanStack builds **dist/client**. The Pages-only preparation step stages that
+  static website at **dist**, excluding server output. Validation and
+  `actions/upload-pages-artifact@v4` use **dist**. `dist/index.html` must exist,
+  `404.html` must match it, and `.nojekyll` and bundled assets must be present.
+  The validator checks asset URLs against the actual Pages base path.
 - Node **22.22.0**, npm **10.9.4**, package.json, and package-lock.json are unchanged.
 
 ## Verification
@@ -51,10 +53,10 @@ standard Pages configuration, clean installation, a fresh
 production build, output validation, artifact upload, deployment, and an HTTP
 check of the returned Pages URL. Check both the build and deploy jobs.
 
-This TanStack Start application outputs **dist/client/index.html**, not
-`dist/index.html`; moving it would unnecessarily change working application
-configuration. The workflow checks that exact file before copying the fallback
-and uploading **dist/client**.
+This TanStack Start application initially outputs **dist/client/index.html**.
+The Pages workflow prepares **dist/index.html** after the build without changing
+application configuration. It validates the static output before staging it,
+preserves the SPA shell as **dist/404.html**, then checks and uploads **dist**.
 
 The local tests do not prove GitHub credentials, repository settings, actual
 production output, or a live deployment. Those remain unverified until the remote
