@@ -78,7 +78,8 @@ function AuthPage() {
         const { full_name, phone, town, province, district, email, password } = parsed.data;
         const { data, error } = await supabase.auth.signUp({
           email, password,
-          options: { emailRedirectTo: `${window.location.origin}/auth`, data: { full_name, phone, town, province, district, skills: role === "worker" ? skills : [], role } },
+          options: { emailRedirectTo: `${window.location.origin}${import.meta.env.BASE_URL}auth`, data: { full_name, phone, town, province, district, skills: role === "worker" ? skills : [], role } },
+
         });
         if (error) setError(error.message);
         else if (!data.session) setInfo(`Almost done! We sent a confirmation link to ${email}. Open it to activate your account.`);
