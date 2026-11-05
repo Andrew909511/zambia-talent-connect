@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { Link } from "@tanstack/react-router";
-import { MapPin, X, User, Briefcase, Calendar, ShieldCheck } from "lucide-react";
+import { MapPin, X, User } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useQueryClient } from "@tanstack/react-query";
 import { inputCls, useAccount, usePublicJobs, usePublicWorkers, useSession } from "@/lib/zamwork";
@@ -135,90 +135,6 @@ export function RealWorkers({ filters }: { filters: Filters }) {
       <p className="text-sm text-muted-foreground mt-3">
         Want to hire? <Link to="/auth" search={{ role: "employer" }} className="text-primary font-medium">Post a job</Link> and workers can apply with their contact details.
       </p>
-    </div>
-  );
-}
-
-function WorkerProfileModal({ worker, onClose }: { worker: WorkerItem; onClose: () => void }) {
-  const memberDate = worker.created_at
-    ? new Date(worker.created_at).toLocaleDateString(undefined, { year: "numeric", month: "short" })
-    : null;
-
-  const fullLocation = [worker.town, worker.district, worker.province].filter(Boolean).join(", ") || worker.location;
-
-  return (
-    <div className="fixed inset-0 z-[60] bg-foreground/50 flex items-end sm:items-center justify-center p-0 sm:p-4" onClick={onClose}>
-      <div className="bg-card w-full sm:max-w-lg max-h-[90vh] overflow-y-auto rounded-t-2xl sm:rounded-2xl p-6 relative shadow-lg" onClick={(e) => e.stopPropagation()}>
-        <button onClick={onClose} aria-label="Close" className="absolute top-4 right-4 p-2 rounded hover:bg-muted text-muted-foreground hover:text-foreground">
-          <X className="w-5 h-5" />
-        </button>
-
-        <div className="flex items-center gap-4 mb-4 pr-8">
-          <div className="w-16 h-16 rounded-full bg-primary/10 flex items-center justify-center shrink-0">
-            <User className="w-8 h-8 text-primary" />
-          </div>
-          <div>
-            <h2 className="text-xl font-bold">{worker.full_name}</h2>
-            <p className="text-sm text-muted-foreground flex items-center gap-1 mt-1">
-              <MapPin className="w-4 h-4 text-primary shrink-0" />
-              <span>{fullLocation}</span>
-            </p>
-          </div>
-        </div>
-
-        {memberDate && (
-          <div className="flex items-center gap-2 text-xs text-muted-foreground mb-4 bg-muted/50 p-2 rounded">
-            <Calendar className="w-4 h-4 shrink-0" />
-            <span>Member since {memberDate}</span>
-          </div>
-        )}
-
-        <div className="mb-5">
-          <h3 className="text-sm font-semibold mb-2 flex items-center gap-1.5">
-            <Briefcase className="w-4 h-4 text-primary" />
-            <span>Skills & Professions</span>
-          </h3>
-          {worker.skills && worker.skills.length > 0 ? (
-            <div className="flex flex-wrap gap-2">
-              {worker.skills.map((s, i) => (
-                <span key={i} className="text-xs bg-primary/10 text-primary px-2.5 py-1 rounded font-medium">
-                  {s}
-                </span>
-              ))}
-            </div>
-          ) : (
-            <p className="text-sm text-muted-foreground">General skilled worker</p>
-          )}
-        </div>
-
-        <div className="border-t border-border pt-4 mb-5">
-          <h3 className="text-sm font-semibold mb-1 flex items-center gap-1.5">
-            <ShieldCheck className="w-4 h-4 text-primary" />
-            <span>How to connect</span>
-          </h3>
-          <p className="text-xs text-muted-foreground leading-relaxed">
-            To protect worker privacy and prevent unsolicited calls, contact details are shared when you post a job and connect directly through Zamwork.
-          </p>
-        </div>
-
-        <div className="flex flex-col gap-2">
-          <Link
-            to="/auth"
-            search={{ role: "employer" }}
-            onClick={onClose}
-            className="block text-center w-full py-3 bg-primary text-primary-foreground rounded-lg font-medium hover:opacity-90 transition"
-          >
-            Post a Job to Connect (Free)
-          </Link>
-          <button
-            type="button"
-            onClick={onClose}
-            className="w-full py-2.5 border border-border text-foreground rounded-lg text-sm hover:bg-muted transition"
-          >
-            Close
-          </button>
-        </div>
-      </div>
     </div>
   );
 }
