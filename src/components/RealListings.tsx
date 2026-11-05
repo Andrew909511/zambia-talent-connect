@@ -92,11 +92,8 @@ function ApplyModal({ job, onClose }: { job: { id: string; title: string; employ
   );
 }
 
-type WorkerItem = NonNullable<ReturnType<typeof usePublicWorkers>["data"]>[number];
-
 export function RealWorkers({ filters }: { filters: Filters }) {
   const workers = usePublicWorkers();
-  const [selectedWorker, setSelectedWorker] = useState<WorkerItem | null>(null);
 
   if (!workers.data?.length) return null;
   const list = workers.data.filter((w) => matches(filters.search, w.skills, w.full_name) && matches(filters.location, w.location, w.town, w.district, w.province));
@@ -107,12 +104,10 @@ export function RealWorkers({ filters }: { filters: Filters }) {
       {list.length === 0 && <p className="text-muted-foreground">No workers match your search yet.</p>}
       <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4">
         {list.map((w) => (
-          <div
+          <Link
             key={w.id}
-            onClick={() => setSelectedWorker(w)}
-            onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); setSelectedWorker(w); } }}
-            tabIndex={0}
-            role="button"
+            to="/worker/$workerId"
+            params={{ workerId: w.id }}
             className="bg-card border border-border rounded-lg p-4 flex flex-col justify-between text-left cursor-pointer transition hover:border-primary hover:shadow-sm focus:outline-none focus:ring-2 focus:ring-primary"
           >
             <div className="flex items-start gap-3">
@@ -134,16 +129,12 @@ export function RealWorkers({ filters }: { filters: Filters }) {
               <span className="text-muted-foreground">Tap to view profile</span>
               <span className="font-medium text-primary bg-primary/10 px-2 py-0.5 rounded">View Profile</span>
             </div>
-          </div>
+          </Link>
         ))}
       </div>
       <p className="text-sm text-muted-foreground mt-3">
         Want to hire? <Link to="/auth" search={{ role: "employer" }} className="text-primary font-medium">Post a job</Link> and workers can apply with their contact details.
       </p>
-
-      {selectedWorker && (
-        <WorkerProfileModal worker={selectedWorker} onClose={() => setSelectedWorker(null)} />
-      )}
     </div>
   );
 }
