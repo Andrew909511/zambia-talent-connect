@@ -90,7 +90,7 @@ function AuthPage() {
   async function google() {
     setError("");
     localStorage.setItem("zamwork_pending_role", role);
-    const result = await lovable.auth.signInWithOAuth("google", { redirect_uri: `${window.location.origin}/auth` });
+    const result = await lovable.auth.signInWithOAuth("google", { redirect_uri: `${window.location.origin}${import.meta.env.BASE_URL}auth` });
 
     if (result.error) setError("Google sign-in didn't work. Please try again.");
   }

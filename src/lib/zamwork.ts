@@ -46,15 +46,17 @@ export function usePublicJobs() {
   });
 }
 
+export const workersQueryOptions = {
+  queryKey: ["workers"],
+  queryFn: async () => {
+    const { data, error } = await supabase.rpc("list_workers");
+    if (error) throw error;
+    return data;
+  },
+};
+
 export function usePublicWorkers() {
-  return useQuery({
-    queryKey: ["workers"],
-    queryFn: async () => {
-      const { data, error } = await supabase.rpc("list_workers");
-      if (error) throw error;
-      return data;
-    },
-  });
+  return useQuery(workersQueryOptions);
 }
 
 export const inputCls = "w-full px-4 py-3 rounded-lg border border-border bg-card text-base focus:outline-none focus:ring-2 focus:ring-primary";
