@@ -15,6 +15,13 @@
       "when": 1791935351931,
       "tag": "0001_professions_locations",
       "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "7",
+      "when": 1793991808439,
+      "tag": "0002_simple_worker_profiles",
+      "breakpoints": true
     }
   ]
 }
