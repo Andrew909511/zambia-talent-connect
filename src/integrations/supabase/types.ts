@@ -102,8 +102,10 @@ export type Database = {
       }
       profiles: {
         Row: {
+          about: string
           created_at: string
           district: string
+          experience: string
           full_name: string
           id: string
           location: string
@@ -114,8 +116,10 @@ export type Database = {
           updated_at: string
         }
         Insert: {
+          about?: string
           created_at?: string
           district?: string
+          experience?: string
           full_name: string
           id: string
           location: string
@@ -126,8 +130,10 @@ export type Database = {
           updated_at?: string
         }
         Update: {
+          about?: string
           created_at?: string
           district?: string
+          experience?: string
           full_name?: string
           id?: string
           location?: string
@@ -166,6 +172,7 @@ export type Database = {
         Args: { _employer_id: string; _worker_id: string }
         Returns: boolean
       }
+      get_worker_contact: { Args: { _worker_id: string }; Returns: string }
       has_role: {
         Args: {
           _role: Database["public"]["Enums"]["app_role"]
@@ -180,8 +187,10 @@ export type Database = {
       list_workers: {
         Args: never
         Returns: {
+          about: string
           created_at: string
           district: string
+          experience: string
           full_name: string
           id: string
           location: string
