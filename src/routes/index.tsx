@@ -229,16 +229,13 @@ function Index() {
         <section className="py-8">
           <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
             <h1 className="text-3xl font-bold mb-2">Find Workers</h1>
-            <p className="text-sm text-muted-foreground mb-6">Profiles marked "Example" are samples to show how worker profiles appear on Zamwork.</p>
+            <p className="text-base text-muted-foreground mb-4">Type what you need and your town. Tap a worker to see their profile.</p>
             <div className="grid sm:grid-cols-2 gap-4 mb-6">
               <div><label className="block text-sm font-medium mb-2">Profession, skill or service</label><input type="text" list="zm-professions" placeholder="e.g. Electrician, Barber, Tutor..." value={searchQuery} onChange={(e) => setSearchQuery(e.target.value)} className="w-full px-4 py-3 rounded-lg border border-border bg-card text-base focus:outline-none focus:ring-2 focus:ring-primary" /><ProfessionsList /></div>
               <div><label className="block text-sm font-medium mb-2">Location</label><input type="text" list="zm-places" placeholder="Town, district or province" value={selectedLocation} onChange={(e) => setSelectedLocation(e.target.value)} className="w-full px-4 py-3 rounded-lg border border-border bg-card text-base focus:outline-none focus:ring-2 focus:ring-primary" /><PlacesList /></div>
             </div>
-            <div className="mb-6"><SafetyNotice /></div>
             <RealWorkers filters={{ search: searchQuery, location: selectedLocation }} />
-            <h2 className="text-xl font-bold mb-4">Example profiles</h2>
-            {filteredWorkers.length === 0 && <p className="text-muted-foreground mb-4">No example profiles match.</p>}
-            <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-6">{filteredWorkers.map((w) => <WorkerCard key={w.id} worker={w} />)}</div>
+            <SafetyNotice />
           </div>
         </section>
       )}
