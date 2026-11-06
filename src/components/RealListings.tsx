@@ -22,17 +22,13 @@ export function RealJobs({ filters }: { filters: Filters }) {
       {list.length === 0 ? <p className="text-muted-foreground">No posted jobs match your search.</p> : (
         <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4">
           {list.map((j) => (
-            <div key={j.id} className="bg-card border border-border rounded-lg p-4 flex flex-col">
-              <h3 className="font-bold">{j.title}</h3>
-              <p className="text-sm text-muted-foreground mb-2">{j.employer_name}</p>
-              <div className="flex gap-2 mb-2"><span className="text-xs bg-primary/10 text-primary px-2 py-1 rounded">{j.job_type}</span><span className="text-xs bg-muted px-2 py-1 rounded">{j.category}</span></div>
-              <p className="text-sm text-muted-foreground line-clamp-2 mb-3">{j.description}</p>
-              <div className="flex justify-between text-sm mt-auto mb-3">
-                <span className="text-muted-foreground flex items-center gap-1"><MapPin className="w-4 h-4" />{j.location}</span>
-                {j.salary && <span className="font-semibold text-primary">K{j.salary}</span>}
-              </div>
-              <button onClick={() => setOpen(j)} className="w-full py-3 bg-primary text-primary-foreground rounded font-medium text-sm">View & Apply</button>
-            </div>
+            <button key={j.id} onClick={() => setOpen(j)} className="bg-card border border-border rounded-xl p-4 flex flex-col text-left hover:border-primary active:bg-muted">
+              <h3 className="text-lg font-bold">{j.title}</h3>
+              <p className="text-sm text-muted-foreground flex items-center gap-1 mt-1"><MapPin className="w-4 h-4" />{j.location}</p>
+              <p className="text-sm text-muted-foreground mt-1">Posted by: {j.employer_name}</p>
+              {j.salary && <p className="text-sm font-semibold text-primary mt-1">K{j.salary}</p>}
+              <span className="mt-3 block text-center w-full py-3 bg-primary text-primary-foreground rounded-lg font-semibold">View Job</span>
+            </button>
           ))}
         </div>
       )}
@@ -96,7 +92,7 @@ export function RealWorkers({ filters }: { filters: Filters }) {
   const workers = usePublicWorkers();
 
   if (!workers.data?.length) return null;
-  const list = workers.data.filter((w) => matches(filters.search, w.skills, w.full_name) && matches(filters.location, w.location, w.town, w.district, w.province));
+  const list = workers.data.filter((w) => matches(filters.search, w.skills, w.full_name, w.about) && matches(filters.location, w.location, w.town, w.district, w.province));
 
   return (
     <div className="mb-10">
@@ -108,27 +104,20 @@ export function RealWorkers({ filters }: { filters: Filters }) {
             key={w.id}
             to="/worker/$workerId"
             params={{ workerId: w.id }}
-            className="bg-card border border-border rounded-lg p-4 flex flex-col justify-between text-left cursor-pointer transition hover:border-primary hover:shadow-sm focus:outline-none focus:ring-2 focus:ring-primary"
+            className="bg-card border border-border rounded-xl p-4 flex flex-col text-left cursor-pointer transition hover:border-primary active:bg-muted focus:outline-none focus:ring-2 focus:ring-primary"
           >
             <div className="flex items-start gap-3">
               <div className="w-12 h-12 rounded-full bg-primary/10 flex items-center justify-center shrink-0">
                 <User className="w-6 h-6 text-primary" />
               </div>
               <div className="min-w-0 flex-1">
-                <p className="font-semibold truncate">{w.full_name}</p>
-                {w.skills?.length > 0 && (
-                  <p className="text-sm text-primary line-clamp-1">{w.skills.join(" · ")}</p>
-                )}
-                <p className="text-sm text-muted-foreground flex items-center gap-1 mt-0.5 truncate">
-                  <MapPin className="w-3 h-3 shrink-0" />
-                  <span className="truncate">{w.location}</span>
-                </p>
+                <p className="text-lg font-bold truncate">{w.full_name}</p>
+                {w.skills?.[0] && <p className="text-base text-primary font-medium truncate">{w.skills[0]}</p>}
+                {(w.town || w.location) && <p className="text-sm text-muted-foreground flex items-center gap-1 mt-0.5 truncate"><MapPin className="w-4 h-4 shrink-0" /><span className="truncate">{w.town || w.location}</span></p>}
+                {w.experience && <p className="text-sm text-muted-foreground mt-0.5 truncate">{w.experience} experience</p>}
               </div>
             </div>
-            <div className="mt-3 pt-3 border-t border-border flex items-center justify-between text-xs">
-              <span className="text-muted-foreground">Tap to view profile</span>
-              <span className="font-medium text-primary bg-primary/10 px-2 py-0.5 rounded">View Profile</span>
-            </div>
+            <span className="mt-3 block text-center w-full py-3 bg-primary text-primary-foreground rounded-lg font-semibold">View Profile</span>
           </Link>
         ))}
       </div>
