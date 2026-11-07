@@ -14,3 +14,4 @@
 - Keep npm's committed package-lock.json synchronized with package.json and use npm 10.9.4 on Node 22.12+ in CI because current TanStack Start packages do not support Node 20.
 - Gate GitHub Pages SPA-shell output and disabled Nitro behind GITHUB_PAGES_BUILD so static hosting works without changing Lovable's server deployment; derive router basepath from Vite's BASE_URL for subpath navigation.
 - Use standard configure-pages/upload-pages-artifact/deploy-pages actions with automatic Pages enablement disabled; enable Pages manually, derive Vite's base from Pages metadata, and stage only TanStack's dist/client static output at dist before validation/upload so Pages has dist/index.html without changing Lovable deployment or requiring site-creation privileges.
+- Derive canonical/og:url from SITE_URL in src/lib/zamwork.ts (chosen by Vite BASE_URL) so GitHub Pages and Lovable builds each self-reference their own address.
