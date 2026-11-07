@@ -5,7 +5,7 @@ import { z } from "zod";
 import { Briefcase, LogOut, MapPin, Phone, Trash2 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { JOB_TYPES, inputCls, useAccount, type Role } from "@/lib/zamwork";
-import { formatLocation, PROFESSIONS, type Place } from "@/lib/zambia";
+import { ALL_PLACES, formatLocation, PROFESSIONS, resolvePlace, type Place } from "@/lib/zambia";
 import { LocationPicker, SkillsInput } from "@/components/ProfileFields";
 
 export const Route = createFileRoute("/_authenticated/dashboard")({
@@ -29,7 +29,9 @@ const profileSchema = z.object({
   district: z.string().max(80),
   town: z.string().trim().max(80),
   skills: z.array(z.string().trim().min(1).max(60)).max(8),
-}).refine((p) => p.town || p.province, { message: "Please choose your province or type your town" });
+  about: z.string().trim().max(1500),
+  experience: z.string().trim().max(60),
+}).refine((p) => p.town || p.province, { message: "Please type your town or city" });
 
 function toRow(p: Profile) {
   return { ...p, location: formatLocation(p) };
@@ -79,13 +81,15 @@ function Dashboard() {
   );
 }
 
-type Profile = { full_name: string; phone: string; province: string; district: string; town: string; skills: string[] };
+type Profile = { full_name: string; phone: string; province: string; district: string; town: string; skills: string[]; about: string; experience: string };
 type ProfileRow = Partial<Profile> & { full_name: string; phone: string; location: string };
 
 function fromRow(p: ProfileRow | null, meta: Record<string, unknown> = {}): Profile {
   const town = p?.town || (p ? "" : String(meta["town"] ?? "")) || (p && !p.province ? p.location : "");
-  return { full_name: p?.full_name ?? String(meta["full_name"] ?? meta["name"] ?? ""), phone: p?.phone ?? String(meta["phone"] ?? ""), province: p?.province ?? String(meta["province"] ?? ""), district: p?.district ?? String(meta["district"] ?? ""), town, skills: p?.skills ?? (Array.isArray(meta["skills"]) ? (meta["skills"] as string[]) : []) };
+  return { full_name: p?.full_name ?? String(meta["full_name"] ?? meta["name"] ?? ""), phone: p?.phone ?? String(meta["phone"] ?? ""), province: p?.province ?? String(meta["province"] ?? ""), district: p?.district ?? String(meta["district"] ?? ""), town, skills: p?.skills ?? (Array.isArray(meta["skills"]) ? (meta["skills"] as string[]) : []), about: p?.about ?? "", experience: p?.experience ?? "" };
 }
+
+const labelCls = "block text-base font-semibold mb-1";
 
 function Onboarding({ userId, meta, existingRole, existingProfile }: { userId: string; meta: Record<string, unknown>; existingRole: Role | null; existingProfile: ProfileRow | null }) {
   const qc = useQueryClient();
@@ -114,9 +118,9 @@ function Onboarding({ userId, meta, existingRole, existingProfile }: { userId: s
   useEffect(() => { if (complete) save(); /* eslint-disable-next-line react-hooks/exhaustive-deps */ }, []);
 
   return (
-    <div className="max-w-md mx-auto bg-card border border-border rounded-2xl p-6">
-      <h1 className="text-xl font-bold mb-1">Finish setting up your account</h1>
-      <p className="text-sm text-muted-foreground mb-5">This only takes a moment.</p>
+    <div className="max-w-md mx-auto bg-card border border-border rounded-2xl p-5">
+      <h1 className="text-2xl font-bold mb-1">{role === "worker" ? "Create your profile" : "Your details"}</h1>
+      <p className="text-sm text-muted-foreground mb-5">Takes about 1 minute. You can add more later.</p>
       {!existingRole && (
         <div className="grid grid-cols-2 gap-3 mb-4">
           {(["worker", "employer"] as const).map((r) => (
@@ -126,13 +130,14 @@ function Onboarding({ userId, meta, existingRole, existingProfile }: { userId: s
           ))}
         </div>
       )}
-      <div className="space-y-3">
-        <input className={inputCls} placeholder="Full name or business name" value={form.full_name} onChange={(e) => setForm({ ...form, full_name: e.target.value })} />
-        <input className={inputCls} placeholder="Phone number" type="tel" value={form.phone} onChange={(e) => setForm({ ...form, phone: e.target.value })} />
-        <LocationPicker value={form} onChange={(pl: Place) => setForm({ ...form, ...pl })} />
-        {role === "worker" && <div><p className="text-sm font-medium mb-1">What I do</p><SkillsInput value={form.skills} onChange={(skills) => setForm({ ...form, skills })} /></div>}
+      <div className="space-y-4">
+        <label className="block"><span className={labelCls}>Full name</span><input className={inputCls} placeholder={role === "worker" ? "e.g. John Banda" : "Your name or business name"} value={form.full_name} onChange={(e) => setForm({ ...form, full_name: e.target.value })} autoComplete="name" /></label>
+        <label className="block"><span className={labelCls}>Phone number</span><input className={inputCls} placeholder="e.g. 097 123 4567" type="tel" value={form.phone} onChange={(e) => setForm({ ...form, phone: e.target.value })} autoComplete="tel" /></label>
+        {role === "worker" && <label className="block"><span className={labelCls}>What do you do?</span><input className={inputCls} list="onb-prof" placeholder="e.g. Electrician" value={form.skills[0] ?? ""} onChange={(e) => setForm({ ...form, skills: [e.target.value, ...form.skills.slice(1)] })} /><datalist id="onb-prof">{PROFESSIONS.map((p) => <option key={p} value={p} />)}</datalist></label>}
+        <label className="block"><span className={labelCls}>Town / City</span><input className={inputCls} list="onb-town" placeholder="e.g. Lusaka" value={form.town} onChange={(e) => setForm({ ...form, ...resolvePlace(e.target.value, "") })} /><datalist id="onb-town">{ALL_PLACES.map((p) => <option key={p.province + p.town} value={p.town}>{p.province}</option>)}</datalist></label>
+        {role === "worker" && <label className="block"><span className={labelCls}>About you / experience <span className="font-normal text-muted-foreground">(optional)</span></span><textarea className={inputCls} rows={3} maxLength={1500} placeholder="e.g. I do house wiring and repairs. 5 years experience." value={form.about} onChange={(e) => setForm({ ...form, about: e.target.value })} /></label>}
         {error && <p className="text-sm text-destructive">{error}</p>}
-        <button onClick={save} disabled={busy} className="w-full py-3 bg-primary text-primary-foreground rounded-lg font-semibold disabled:opacity-60">{busy ? "Saving…" : "Continue"}</button>
+        <button onClick={save} disabled={busy} className="w-full py-4 bg-primary text-primary-foreground rounded-xl text-lg font-bold disabled:opacity-60">{busy ? "Saving…" : "Save Profile"}</button>
       </div>
     </div>
   );
