@@ -53,7 +53,7 @@ function WorkerProfilePage() {
   }
 
   const [profession, ...otherSkills] = worker.skills ?? [];
-  const place = [worker.town, worker.district, worker.province].filter(Boolean).join(", ") || worker.location;
+  const place = [...new Set([worker.town, worker.district, worker.province].filter(Boolean))].join(", ") || worker.location;
   const btn = "flex-1 flex items-center justify-center gap-2 py-4 rounded-xl font-bold text-lg";
 
   return (

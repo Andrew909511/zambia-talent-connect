@@ -220,7 +220,6 @@ function WorkerView({ userId }: { userId: string }) {
     <section>
       <div className="flex items-center justify-between mb-4 gap-3">
         <h2 className="text-lg font-bold">My applications</h2>
-        <Link to="/" search={{ view: "jobs" }} className="px-4 py-2 bg-primary text-primary-foreground rounded-lg text-sm font-medium">Find jobs</Link>
       </div>
       {apps.isLoading ? <p className="text-muted-foreground">Loading…</p> : !apps.data?.length ? (
         <p className="text-muted-foreground bg-card border border-border rounded-xl p-6 text-center">You haven't applied for any jobs yet.</p>
