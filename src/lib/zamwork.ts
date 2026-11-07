@@ -60,3 +60,8 @@ export function usePublicWorkers() {
 }
 
 export const inputCls = "w-full px-4 py-3 rounded-lg border border-border bg-card text-base focus:outline-none focus:ring-2 focus:ring-primary";
+
+/** Public address of this build: the GitHub Pages copy uses its project subpath, otherwise the Lovable site. */
+export const SITE_URL = import.meta.env.BASE_URL === "/zambia-talent-connect/"
+  ? "https://andrew909511.github.io/zambia-talent-connect/"
+  : "https://zambia-talent-connect.lovable.app/";
