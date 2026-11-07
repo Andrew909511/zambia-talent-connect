@@ -8,4 +8,6 @@
 - [x] Validate corrected workflow YAML syntax, permissions, build-before-upload order, manual enablement, and artifact tests (2 tests passed); application features and dependencies unchanged.
 - [x] Update standard Pages actions to upload-pages-artifact@v4; stage only static client output at dist and preserve 404.html; five artifact tests, full YAML parsing, and actionlint passed; application features and dependencies unchanged.
 - [ ] Confirm manual Pages enablement with GitHub Actions as the source (user is configuring repository settings; remote settings access unavailable here).
-- [ ] Confirm a fresh Pages production build and deployment in GitHub Actions (requires a remote workflow run).
+- [ ] Confirm a fresh Pages production build and deployment in GitHub Actions (requires a remote workflow run).- [x] Prepare Google Search Console for the GitHub Pages address (canonical, sitemap, robots).
+- [ ] Verify ownership in Search Console and submit sitemap (needs the owner's Google account).
+- [x] Simplify home, sign-up, worker dashboard, worker search and profiles (Call/WhatsApp).

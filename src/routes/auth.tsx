@@ -4,7 +4,7 @@ import { z } from "zod";
 import { Briefcase, Hammer, Building2 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { lovable } from "@/integrations/lovable/index";
-import { inputCls, type Role } from "@/lib/zamwork";
+import { inputCls, SITE_URL, type Role } from "@/lib/zamwork";
 
 const searchSchema = z.object({
   mode: z.enum(["signin", "signup"]).optional(),
@@ -21,7 +21,9 @@ export const Route = createFileRoute("/auth")({
       { property: "og:description", content: "Create a free worker or employer account on Zamwork." },
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary" },
+      { property: "og:url", content: `${SITE_URL}auth` },
     ],
+    links: [{ rel: "canonical", href: `${SITE_URL}auth` }],
   }),
   component: AuthPage,
 });

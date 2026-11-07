@@ -12,3 +12,5 @@ Allow: /
 
 User-agent: *
 Allow: /
+
+Sitemap: https://andrew909511.github.io/zambia-talent-connect/sitemap.xml

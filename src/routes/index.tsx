@@ -10,7 +10,7 @@ import { ALL_PLACES, PROFESSIONS, PROVINCE_NAMES, matches, norm } from "@/lib/za
 const placeOf = (town: string) => ALL_PLACES.find((p) => norm(p.town) === norm(town))?.province ?? "";
 const PlacesList = () => <datalist id="zm-places">{PROVINCE_NAMES.map((p) => <option key={p} value={p} />)}{ALL_PLACES.map((p) => <option key={p.province + p.town} value={p.town}>{p.province}</option>)}</datalist>;
 const ProfessionsList = () => <datalist id="zm-professions">{PROFESSIONS.map((p) => <option key={p} value={p} />)}</datalist>;
-import { useSession } from "@/lib/zamwork";
+import { SITE_URL, useSession } from "@/lib/zamwork";
 import {
   Search,
   MapPin,
@@ -84,13 +84,15 @@ export const Route = createFileRoute("/")({
   validateSearch: z.object({ view: z.enum(["home", "jobs", "workers"]).optional() }),
   head: () => ({
     meta: [
-      { title: "Zamwork — Find Work. Find Talent. Connect." },
-      { name: "description", content: "Zamwork is a growing platform connecting job seekers, skilled workers, employers and clients across Zambia. Free during our launch." },
+      { title: "Zamwork — Find Jobs, Skilled Workers and Services in Zambia" },
+      { name: "description", content: "Zamwork connects people in Zambia with jobs, skilled workers, services and opportunities. Find work, find workers, or create your free profile." },
+      { property: "og:url", content: SITE_URL },
       { property: "og:title", content: "Zamwork — Find Work. Find Talent. Connect." },
       { property: "og:description", content: "Connecting Zambians to jobs and opportunities. Free during our launch." },
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary_large_image" },
     ],
+    links: [{ rel: "canonical", href: SITE_URL }],
   }),
   component: Index,
 });

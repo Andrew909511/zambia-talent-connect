@@ -5,7 +5,7 @@ import { z } from "zod";
 import { Briefcase, LogOut, MapPin, Phone, Trash2 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { JOB_TYPES, inputCls, useAccount, type Role } from "@/lib/zamwork";
-import { formatLocation, PROFESSIONS, type Place } from "@/lib/zambia";
+import { ALL_PLACES, formatLocation, PROFESSIONS, resolvePlace, type Place } from "@/lib/zambia";
 import { LocationPicker, SkillsInput } from "@/components/ProfileFields";
 
 export const Route = createFileRoute("/_authenticated/dashboard")({
@@ -29,7 +29,9 @@ const profileSchema = z.object({
   district: z.string().max(80),
   town: z.string().trim().max(80),
   skills: z.array(z.string().trim().min(1).max(60)).max(8),
-}).refine((p) => p.town || p.province, { message: "Please choose your province or type your town" });
+  about: z.string().trim().max(1500),
+  experience: z.string().trim().max(60),
+}).refine((p) => p.town || p.province, { message: "Please type your town or city" });
 
 function toRow(p: Profile) {
   return { ...p, location: formatLocation(p) };
@@ -49,6 +51,7 @@ function Dashboard() {
   }
 
   const ready = account.data?.role && account.data?.profile;
+  const [editing, setEditing] = useState(false);
 
   return (
     <div className="min-h-screen bg-background text-foreground">
@@ -66,12 +69,30 @@ function Dashboard() {
           : !ready ? <Onboarding userId={user.id} meta={user.user_metadata ?? {}} existingRole={account.data?.role ?? null} existingProfile={account.data?.profile ?? null} />
           : (
             <>
-              <div className="mb-8">
-                <p className="text-sm text-primary font-semibold uppercase tracking-wide">{account.data!.role === "worker" ? "Worker account" : "Employer account"}</p>
-                <h1 className="text-2xl sm:text-3xl font-bold">Welcome, {account.data!.profile!.full_name}</h1>
-              </div>
-              {account.data!.role === "employer" ? <EmployerView userId={user.id} name={account.data!.profile!.full_name} /> : <WorkerView userId={user.id} />}
-              <ProfileEditor userId={user.id} profile={account.data!.profile!} role={account.data!.role!} />
+              <h1 className="text-2xl sm:text-3xl font-bold mb-6">Welcome, {account.data!.profile!.full_name}</h1>
+              {account.data!.role === "employer" ? (
+                <>
+                  <Link to="/" search={{ view: "workers" }} className="block text-center w-full max-w-md py-4 mb-8 bg-primary text-primary-foreground rounded-xl text-lg font-bold">Find Workers</Link>
+                  <EmployerView userId={user.id} name={account.data!.profile!.full_name} />
+                  {editing ? <ProfileEditor userId={user.id} profile={account.data!.profile!} role="employer" onDone={() => setEditing(false)} /> : <button onClick={() => setEditing(true)} className="mt-8 w-full max-w-md py-3 border border-border rounded-xl font-semibold">Edit my details</button>}
+                </>
+              ) : editing ? (
+                <ProfileEditor userId={user.id} profile={account.data!.profile!} role="worker" onDone={() => setEditing(false)} />
+              ) : (
+                <div className="max-w-md space-y-6">
+                  <section className="bg-card border border-border rounded-xl p-4 space-y-3">
+                    <h2 className="text-lg font-bold">Your Profile</h2>
+                    <Link to="/worker/$workerId" params={{ workerId: user.id }} className="block text-center w-full py-4 bg-primary text-primary-foreground rounded-xl text-lg font-bold">View Profile</Link>
+                    <button onClick={() => setEditing(true)} className="w-full py-4 border-2 border-primary text-primary rounded-xl text-lg font-bold">Edit Profile</button>
+                  </section>
+                  <section className="bg-card border border-border rounded-xl p-4">
+                    <h2 className="text-lg font-bold mb-3">Find Jobs</h2>
+                    <Link to="/" search={{ view: "jobs" }} className="block text-center w-full py-4 bg-brand-gold text-brand-ink rounded-xl text-lg font-bold">Find Jobs</Link>
+                  </section>
+                  <WorkerView userId={user.id} />
+                  <button onClick={signOut} className="w-full py-3 text-muted-foreground font-medium flex items-center justify-center gap-2"><LogOut className="w-4 h-4" />Sign Out</button>
+                </div>
+              )}
             </>
           )}
       </main>
@@ -79,13 +100,15 @@ function Dashboard() {
   );
 }
 
-type Profile = { full_name: string; phone: string; province: string; district: string; town: string; skills: string[] };
+type Profile = { full_name: string; phone: string; province: string; district: string; town: string; skills: string[]; about: string; experience: string };
 type ProfileRow = Partial<Profile> & { full_name: string; phone: string; location: string };
 
 function fromRow(p: ProfileRow | null, meta: Record<string, unknown> = {}): Profile {
   const town = p?.town || (p ? "" : String(meta["town"] ?? "")) || (p && !p.province ? p.location : "");
-  return { full_name: p?.full_name ?? String(meta["full_name"] ?? meta["name"] ?? ""), phone: p?.phone ?? String(meta["phone"] ?? ""), province: p?.province ?? String(meta["province"] ?? ""), district: p?.district ?? String(meta["district"] ?? ""), town, skills: p?.skills ?? (Array.isArray(meta["skills"]) ? (meta["skills"] as string[]) : []) };
+  return { full_name: p?.full_name ?? String(meta["full_name"] ?? meta["name"] ?? ""), phone: p?.phone ?? String(meta["phone"] ?? ""), province: p?.province ?? String(meta["province"] ?? ""), district: p?.district ?? String(meta["district"] ?? ""), town, skills: p?.skills ?? (Array.isArray(meta["skills"]) ? (meta["skills"] as string[]) : []), about: p?.about ?? "", experience: p?.experience ?? "" };
 }
+
+const labelCls = "block text-base font-semibold mb-1";
 
 function Onboarding({ userId, meta, existingRole, existingProfile }: { userId: string; meta: Record<string, unknown>; existingRole: Role | null; existingProfile: ProfileRow | null }) {
   const qc = useQueryClient();
@@ -98,7 +121,8 @@ function Onboarding({ userId, meta, existingRole, existingProfile }: { userId: s
 
   async function save() {
     setError("");
-    const parsed = profileSchema.safeParse(form);
+    if (role === "worker" && !form.skills[0]?.trim()) { setError("Please say what you do, e.g. Electrician"); return; }
+    const parsed = profileSchema.safeParse({ ...form, skills: form.skills.map((s) => s.trim()).filter(Boolean) });
     if (!parsed.success) { setError((parsed.error.issues[0]?.message ?? "Please check your details")); return; }
     setBusy(true);
     const { error: pErr } = await supabase.from("profiles").upsert({ id: userId, ...toRow(parsed.data), updated_at: new Date().toISOString() });
@@ -114,9 +138,9 @@ function Onboarding({ userId, meta, existingRole, existingProfile }: { userId: s
   useEffect(() => { if (complete) save(); /* eslint-disable-next-line react-hooks/exhaustive-deps */ }, []);
 
   return (
-    <div className="max-w-md mx-auto bg-card border border-border rounded-2xl p-6">
-      <h1 className="text-xl font-bold mb-1">Finish setting up your account</h1>
-      <p className="text-sm text-muted-foreground mb-5">This only takes a moment.</p>
+    <div className="max-w-md mx-auto bg-card border border-border rounded-2xl p-5">
+      <h1 className="text-2xl font-bold mb-1">{role === "worker" ? "Create your profile" : "Your details"}</h1>
+      <p className="text-sm text-muted-foreground mb-5">Takes about 1 minute. You can add more later.</p>
       {!existingRole && (
         <div className="grid grid-cols-2 gap-3 mb-4">
           {(["worker", "employer"] as const).map((r) => (
@@ -126,43 +150,52 @@ function Onboarding({ userId, meta, existingRole, existingProfile }: { userId: s
           ))}
         </div>
       )}
-      <div className="space-y-3">
-        <input className={inputCls} placeholder="Full name or business name" value={form.full_name} onChange={(e) => setForm({ ...form, full_name: e.target.value })} />
-        <input className={inputCls} placeholder="Phone number" type="tel" value={form.phone} onChange={(e) => setForm({ ...form, phone: e.target.value })} />
-        <LocationPicker value={form} onChange={(pl: Place) => setForm({ ...form, ...pl })} />
-        {role === "worker" && <div><p className="text-sm font-medium mb-1">What I do</p><SkillsInput value={form.skills} onChange={(skills) => setForm({ ...form, skills })} /></div>}
+      <div className="space-y-4">
+        <label className="block"><span className={labelCls}>Full name</span><input className={inputCls} placeholder={role === "worker" ? "e.g. John Banda" : "Your name or business name"} value={form.full_name} onChange={(e) => setForm({ ...form, full_name: e.target.value })} autoComplete="name" /></label>
+        <label className="block"><span className={labelCls}>Phone number</span><input className={inputCls} placeholder="e.g. 097 123 4567" type="tel" value={form.phone} onChange={(e) => setForm({ ...form, phone: e.target.value })} autoComplete="tel" /></label>
+        {role === "worker" && <label className="block"><span className={labelCls}>What do you do?</span><input className={inputCls} list="onb-prof" placeholder="e.g. Electrician" value={form.skills[0] ?? ""} onChange={(e) => setForm({ ...form, skills: [e.target.value, ...form.skills.slice(1)] })} /><datalist id="onb-prof">{PROFESSIONS.map((p) => <option key={p} value={p} />)}</datalist></label>}
+        <label className="block"><span className={labelCls}>Town / City</span><input className={inputCls} list="onb-town" placeholder="e.g. Lusaka" value={form.town} onChange={(e) => setForm({ ...form, ...resolvePlace(e.target.value, "") })} /><datalist id="onb-town">{ALL_PLACES.map((p) => <option key={p.province + p.town} value={p.town}>{p.province}</option>)}</datalist></label>
+        {role === "worker" && <label className="block"><span className={labelCls}>About you / experience <span className="font-normal text-muted-foreground">(optional)</span></span><textarea className={inputCls} rows={3} maxLength={1500} placeholder="e.g. I do house wiring and repairs. 5 years experience." value={form.about} onChange={(e) => setForm({ ...form, about: e.target.value })} /></label>}
         {error && <p className="text-sm text-destructive">{error}</p>}
-        <button onClick={save} disabled={busy} className="w-full py-3 bg-primary text-primary-foreground rounded-lg font-semibold disabled:opacity-60">{busy ? "Saving…" : "Continue"}</button>
+        <button onClick={save} disabled={busy} className="w-full py-4 bg-primary text-primary-foreground rounded-xl text-lg font-bold disabled:opacity-60">{busy ? "Saving…" : "Save Profile"}</button>
       </div>
     </div>
   );
 }
 
-function ProfileEditor({ userId, profile, role }: { userId: string; profile: ProfileRow; role: Role }) {
+function ProfileEditor({ userId, profile, role, onDone }: { userId: string; profile: ProfileRow; role: Role; onDone: () => void }) {
   const qc = useQueryClient();
   const [form, setForm] = useState<Profile>(fromRow(profile));
   const [msg, setMsg] = useState("");
+  const [busy, setBusy] = useState(false);
   async function save() {
     const parsed = profileSchema.safeParse(form);
     if (!parsed.success) { setMsg((parsed.error.issues[0]?.message ?? "Please check your details")); return; }
+    setBusy(true);
     const { error } = await supabase.from("profiles").update({ ...toRow(parsed.data), updated_at: new Date().toISOString() }).eq("id", userId);
-    setMsg(error ? "Couldn't save. Try again." : "Saved.");
-    qc.invalidateQueries({ queryKey: ["account", userId] });
+    setBusy(false);
+    if (error) { setMsg("Couldn't save. Try again."); return; }
+    await qc.invalidateQueries({ queryKey: ["account", userId] });
+    qc.invalidateQueries({ queryKey: ["workers"] });
+    onDone();
   }
   return (
-    <section className="mt-10 bg-card border border-border rounded-xl p-5">
-      <h2 className="text-lg font-bold mb-4">My profile</h2>
-      <div className="grid sm:grid-cols-2 gap-3">
-        <input className={inputCls} value={form.full_name} onChange={(e) => setForm({ ...form, full_name: e.target.value })} aria-label="Name" />
-        <input className={inputCls} value={form.phone} type="tel" onChange={(e) => setForm({ ...form, phone: e.target.value })} aria-label="Phone" />
+    <section className="max-w-md bg-card border border-border rounded-xl p-5 space-y-4">
+      <h2 className="text-xl font-bold">Edit Profile</h2>
+      <label className="block"><span className={labelCls}>Full name</span><input className={inputCls} value={form.full_name} onChange={(e) => setForm({ ...form, full_name: e.target.value })} /></label>
+      <label className="block"><span className={labelCls}>Phone number</span><input className={inputCls} value={form.phone} type="tel" onChange={(e) => setForm({ ...form, phone: e.target.value })} /></label>
+      <div><span className={labelCls}>Location</span><LocationPicker value={form} onChange={(pl: Place) => setForm({ ...form, ...pl })} /></div>
+      {role === "worker" && <>
+        <div><span className={labelCls}>What I do</span><p className="text-sm text-muted-foreground mb-1">The first one is shown as your profession. Add skills and services too.</p><SkillsInput value={form.skills} onChange={(skills) => setForm({ ...form, skills })} /></div>
+        <label className="block"><span className={labelCls}>Years of experience</span><input className={inputCls} maxLength={60} placeholder="e.g. 5 years" value={form.experience} onChange={(e) => setForm({ ...form, experience: e.target.value })} /></label>
+        <label className="block"><span className={labelCls}>About you</span><textarea className={inputCls} rows={4} maxLength={1500} value={form.about} onChange={(e) => setForm({ ...form, about: e.target.value })} /></label>
+        <p className="text-sm text-muted-foreground">Signed-in visitors can call or WhatsApp you from your profile.</p>
+      </>}
+      {msg && <p className="text-sm text-destructive">{msg}</p>}
+      <div className="flex gap-3">
+        <button onClick={save} disabled={busy} className="flex-1 py-4 bg-primary text-primary-foreground rounded-xl text-lg font-bold disabled:opacity-60">{busy ? "Saving…" : "Save"}</button>
+        <button onClick={onDone} className="px-5 py-4 border border-border rounded-xl font-semibold">Cancel</button>
       </div>
-      <div className="mt-3"><LocationPicker value={form} onChange={(pl: Place) => setForm({ ...form, ...pl })} /></div>
-      {role === "worker" && <div className="mt-3"><p className="text-sm font-medium mb-1">What I do (skills, trades, services)</p><SkillsInput value={form.skills} onChange={(skills) => setForm({ ...form, skills })} /></div>}
-      <div className="flex items-center gap-3 mt-3">
-        <button onClick={save} className="px-5 py-2.5 bg-primary text-primary-foreground rounded-lg font-medium">Save profile</button>
-        {msg && <span className="text-sm text-muted-foreground">{msg}</span>}
-      </div>
-      <p className="text-xs text-muted-foreground mt-3">Your phone number is only shown to employers whose jobs you apply for.</p>
     </section>
   );
 }
@@ -187,7 +220,6 @@ function WorkerView({ userId }: { userId: string }) {
     <section>
       <div className="flex items-center justify-between mb-4 gap-3">
         <h2 className="text-lg font-bold">My applications</h2>
-        <Link to="/" search={{ view: "jobs" }} className="px-4 py-2 bg-primary text-primary-foreground rounded-lg text-sm font-medium">Find jobs</Link>
       </div>
       {apps.isLoading ? <p className="text-muted-foreground">Loading…</p> : !apps.data?.length ? (
         <p className="text-muted-foreground bg-card border border-border rounded-xl p-6 text-center">You haven't applied for any jobs yet.</p>
